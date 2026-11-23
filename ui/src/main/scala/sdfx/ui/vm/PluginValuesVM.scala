@@ -155,18 +155,30 @@ final class PluginsVM(val mode: Mode, scripts: Seq[Plugin], alwaysOnPlugins: Seq
     sdfx.plugins.ClipIoPlugin.replay(fields).foreach(values => form("clip_io").foreach(_.load(values)))
     sdfx.plugins.CompilePlugin.replay(fields).foreach(values => form("compile").foreach(_.load(values)))
     sdfx.plugins.DeepCachePlugin.replay(fields).foreach(values => form("deepcache").foreach(_.load(values)))
+    sdfx.plugins.CfgCachePlugin.replay(fields).foreach(values => form("cfg_cache").foreach(_.load(values)))
+    sdfx.plugins.PostDiffPlugin.replay(fields).foreach(values => form("postdiff").foreach(_.load(values)))
     sdfx.plugins.TGatePlugin.replay(fields).foreach(values => form("tgate").foreach(_.load(values)))
     sdfx.plugins.FastModePlugin.replay(fields).foreach { fm =>
       form("fast_mode").foreach(_.load(fm))
       if fm.bool("enabled") then
         val fmInterval = fm.int("interval", 3)
         val fmOrder = fm.int("order", 0)
+        val fmContraction = fm.double("contraction", 1.0)
+        val fmCfgCache = fm.int("cfg_cache_interval", 0)
         val fmGateStep = fm.int("gate_step", 0)
         form("deepcache").foreach { dc =>
           val v = dc.values
           if v.bool("enabled") && fmInterval >= 2 && v.int("interval", -1) == fmInterval &&
-              v.int("branch", -1) == 0 && v.int("full_first", -1) == 5 && v.int("order", 0) == fmOrder then
+              v.int("branch", -1) == 0 && v.int("full_first", -1) == 5 && v.int("order", 0) == fmOrder &&
+              math.abs(v.double("contraction", 1.0) - fmContraction) < 1e-6 then
             dc.load(Values(Map("enabled" -> "false")))
+        }
+        form("cfg_cache").foreach { cc =>
+          val v = cc.values
+          if v.bool("enabled") && fmCfgCache >= 2 && v.int("interval", -1) == fmCfgCache &&
+              math.abs(v.double("start", -1.0) - 0.25) < 1e-6 &&
+              v.double("adaptive_threshold", 0.0) == 0.0 && v.double("hf_weight", 0.0) == 0.0 then
+            cc.load(Values(Map("enabled" -> "false")))
         }
         form("tgate").foreach { tg =>
           val v = tg.values

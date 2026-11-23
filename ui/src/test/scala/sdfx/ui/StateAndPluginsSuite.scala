@@ -247,19 +247,23 @@ class StateAndPluginsSuite extends munit.FunSuite:
     assert(CliOptions.parse(Seq("--mcp")).mcp)
   }
 
-  test("PluginsVM.restoreInfotext restores Fast Mode without duplicating DeepCache or T-GATE") {
+  test("PluginsVM.restoreInfotext restores Fast Mode without duplicating DeepCache, CFG-Cache or T-GATE") {
     val dc = new sdfx.plugins.DeepCachePlugin
+    val cc = new sdfx.plugins.CfgCachePlugin
     val tg = new sdfx.plugins.TGatePlugin
     val fm = new sdfx.plugins.FastModePlugin
-    val pv = new PluginsVM(Mode.Txt2Img, Nil, Seq(dc, tg, fm), _ => Values.empty)
+    val pv = new PluginsVM(Mode.Txt2Img, Nil, Seq(dc, cc, tg, fm), _ => Values.empty)
     val params = fm.process(GenerationParams(prompt = "cat", cfgScale = 7.0),
-      Values(Values.defaults(fm.controls).map ++ Map("enabled" -> "true", "order" -> "1", "gate_step" -> "8")))
+      Values(Values.defaults(fm.controls).map ++ Map("enabled" -> "true")))
     val text = sdfx.core.infotext.Infotext.write(params, sdfx.core.infotext.ImageFacts(seed = 42L))
     pv.restoreInfotext(text)
     assertEquals(pv.form("fast_mode").get.values.str("enabled"), "true")
     assertEquals(pv.form("fast_mode").get.values.str("order"), "1")
-    assertEquals(pv.form("fast_mode").get.values.str("gate_step"), "8")
+    assertEquals(pv.form("fast_mode").get.values.str("contraction"), "0.7")
+    assertEquals(pv.form("fast_mode").get.values.str("cfg_cache_interval"), "3")
+    assertEquals(pv.form("fast_mode").get.values.str("gate_step"), "10")
     assertEquals(pv.form("deepcache").get.values.str("enabled"), "false")
+    assertEquals(pv.form("cfg_cache").get.values.str("enabled"), "false")
     assertEquals(pv.form("tgate").get.values.str("enabled"), "false")
     pv.restoreInfotext("cat\nSteps: 20, Seed: 4, Size: 512x512")
     assertEquals(pv.form("fast_mode").get.values.str("enabled"), "false")

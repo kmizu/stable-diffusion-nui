@@ -24,7 +24,7 @@ class AlwaysOnSuite extends munit.FunSuite:
       case t: TokenizerPlugin => assertEquals(t.requiresEngineFeatures, Seq("tokenizer"))
       case t: VaeToolsPlugin => assertEquals(t.requiresEngineFeatures, Seq("vae_tools"))
       case t: ControlNetFastloadPlugin => assertEquals(t.requiresEngineFeatures, Seq("controlnet_fastload_data"))
-      case f: FastModePlugin => assertEquals(f.requiresEngineFeatures, Seq("deepcache", "tgate", "cfg_schedule"))
+      case f: FastModePlugin => assertEquals(f.requiresEngineFeatures, Seq("deepcache", "tgate", "cfg_schedule", "cfg_cache"))
       case other         => assertEquals(other.requiresEngineFeatures, Nil, other.id)
     }
   }

@@ -250,8 +250,8 @@ final class GenerationPanel(
       quick.setId(s"fast-mode-quick-${mode.key}")
       quick.selectedProperty.bindBidirectional(PluginForm.boolProp(enabledProp))
       quick.getStyleClass.add("fast-mode-check")
-      W.tip(quick, "DeepCache + TaylorSeer + T-GATE + CFG 70% for faster draft generation")
-      val summary = W.label("DeepCache + T-GATE + CFG 70%", "hint")
+      W.tip(quick, "DeepCache + HiCache + CFG-Cache + T-GATE + CFG 70% for faster generation")
+      val summary = W.label("HiCache + CFG-Cache + T-GATE + CFG 70%", "hint")
       val configure = W.button("Configure", "Expand Fast mode settings")(
         sections.get(s"${mode.key}.plugin.fast_mode").foreach { pane =>
           pane.setVisible(true)

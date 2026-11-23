@@ -37,14 +37,20 @@ class DeepCacheSuite extends munit.FunSuite:
     assertEquals(DeepCachePlugin.replay(Map("DeepCache interval" -> "3", "DeepCache branch" -> "4")), None)
     assertEquals(DeepCachePlugin.replay(Map("DeepCache interval" -> "3", "DeepCache order" -> "-1")), None)
     assertEquals(DeepCachePlugin.replay(Map("DeepCache interval" -> "3", "DeepCache order" -> "3")), None)
+    assertEquals(DeepCachePlugin.replay(Map("DeepCache interval" -> "3", "DeepCache contraction" -> "0.05")), None)
+    assertEquals(DeepCachePlugin.replay(Map("DeepCache interval" -> "3", "DeepCache contraction" -> "1.2")), None)
 
   test("TaylorSeer order is omitted when 0 and round-trips through infotext when > 0"):
     val zero = plugin.process(GenerationParams(), enabled("order" -> "0"))
     assert(!zero.hooks("deepcache").obj.contains("order"))
     assert(!zero.extra.contains(DeepCachePlugin.OrderKey))
-    val two = plugin.process(GenerationParams(), enabled("interval" -> "4", "order" -> "2"))
+    assert(!zero.hooks("deepcache").obj.contains("contraction"))
+    val two = plugin.process(GenerationParams(), enabled("interval" -> "4", "order" -> "2", "contraction" -> "0.7"))
     assertEquals(two.hooks("deepcache")("order").num, 2.0)
+    assertEqualsDouble(two.hooks("deepcache")("contraction").num, 0.7, 1e-9)
     assertEquals(two.extra(DeepCachePlugin.OrderKey), "2")
+    assertEquals(two.extra(DeepCachePlugin.ContractionKey), "0.7")
     val fields = Infotext.parse(Infotext.write(two, ImageFacts(seed = 4))).fields
     val back = DeepCachePlugin.replay(fields).get
     assertEquals(back.int("order"), 2)
+    assertEqualsDouble(back.double("contraction", 1.0), 0.7, 1e-9)

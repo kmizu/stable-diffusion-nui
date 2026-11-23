@@ -1609,5 +1609,18 @@
  "Actual size (100%)": "原寸表示 (100%)",
  "Fit to window": "ウィンドウに合わせる",
  "Zoom in (+)": "拡大 (+)",
- "Zoom out (-)": "縮小 (-)"
+ "Zoom out (-)": "縮小 (-)",
+ "DeepCache + HiCache + CFG-Cache + T-GATE + CFG 70% for faster generation": "DeepCache + HiCache + CFG-Cache + T-GATE + CFG 70% で高速生成します",
+ "HiCache + CFG-Cache + T-GATE + CFG 70%": "HiCache・CFG-Cache・T-GATE・CFG 70%",
+ "HiCache Hermite contraction (1 = exact TaylorSeer)": "HiCache エルミート収縮係数 (1 = 厳密 TaylorSeer)",
+ "HiCache contraction (1 = exact TaylorSeer)": "HiCache 収縮係数 (1 = 厳密 TaylorSeer)",
+ "CFG-Cache: full CFG every N steps (0 = off)": "CFG-Cache: N ステップごとに全 CFG を再計算 (0 = 無効)",
+ "CFG-Cache (FasterCache)": "CFG-Cache (FasterCache)",
+ "Warmup fraction (full CFG steps at start)": "ウォームアップ割合（先頭の全 CFG ステップ）",
+ "Reuse interval (full CFG every N steps)": "再利用間隔（N ステップごとに全 CFG 実行）",
+ "Adaptive cosine threshold (0 = fixed interval)": "適応コサイン類似度しきい値 (0 = 固定間隔)",
+ "High-frequency boost weight late in sampling": "サンプリング後半の高周波強調重み",
+ "PostDiff Progressive Resolution": "PostDiff 段階的解像度拡散",
+ "First-stage resolution scale": "第 1 段階の解像度スケール",
+ "First-stage step portion": "第 1 段階のステップ割合"
 }

@@ -6,7 +6,7 @@ import java.util.Base64
 import sdfx.core.infotext.Infotext
 import sdfx.core.plugins.api.{Control, Plugin, Values}
 import sdfx.core.png.PngMetadata
-import sdfx.plugins.{CompilePlugin, DeepCachePlugin, FastModePlugin, TGatePlugin, ClipIoPlugin, CnAnimationPlugin, AnimateDiffPlugin, BatchFaceSwapPlugin, AestheticScorePlugin, AestheticGradientsPlugin, LlulPlugin, OldSdFirstpasserPlugin, CorridorCrawlerPlugin, AgentAttentionPlugin, CdTunerPlugin, CharacteristicGuidancePlugin, IncantationsPlugin, ConditioningHighresFixPlugin, Img2ImgHiresFixPlugin, NsfwCheckerPlugin, SemanticGuidancePlugin, SonarPlugin, StandardPlugins, TokenDownsamplingPlugin}
+import sdfx.plugins.{CfgCachePlugin, CompilePlugin, DeepCachePlugin, FastModePlugin, PostDiffPlugin, TGatePlugin, ClipIoPlugin, CnAnimationPlugin, AnimateDiffPlugin, BatchFaceSwapPlugin, AestheticScorePlugin, AestheticGradientsPlugin, LlulPlugin, OldSdFirstpasserPlugin, CorridorCrawlerPlugin, AgentAttentionPlugin, CdTunerPlugin, CharacteristicGuidancePlugin, IncantationsPlugin, ConditioningHighresFixPlugin, Img2ImgHiresFixPlugin, NsfwCheckerPlugin, SemanticGuidancePlugin, SonarPlugin, StandardPlugins, TokenDownsamplingPlugin}
 import scala.util.control.NonFatal
 
 /** Inspect only: no model load, plugin execution, script execution or generation. */
@@ -161,6 +161,8 @@ object InspectGenerationMetadata:
       "clip_io" -> ClipIoPlugin.replay(f).filter(_ => ClipIoPlugin.InfotextKeys.exists(f.contains)),
       "compile" -> CompilePlugin.replay(f).filter(_ => f.contains(CompilePlugin.BackendKey)),
       "deepcache" -> DeepCachePlugin.replay(f).filter(_ => f.contains(DeepCachePlugin.IntervalKey)),
+      "cfg_cache" -> CfgCachePlugin.replay(f).filter(_ => f.contains(CfgCachePlugin.IntervalKey)),
+      "postdiff" -> PostDiffPlugin.replay(f).filter(_ => f.contains(PostDiffPlugin.ScaleKey)),
       "tgate" -> TGatePlugin.replay(f).filter(_ => f.contains(TGatePlugin.GateStepKey)),
       "fast_mode" -> FastModePlugin.replay(f).filter(_ => f.contains(FastModePlugin.InfotextKey)),
       "aesthetic_score" -> AestheticScorePlugin.replay(f).filter(_ => AestheticScorePlugin.TriggerKeys.exists(f.contains)),
@@ -215,12 +217,23 @@ object InspectGenerationMetadata:
     val fastModeOwnedDeepCache = on.value.get("fast_mode").exists { fm =>
       val interval = fm("interval").num.toInt
       val order = fm("order").num.toInt
+      val contraction = fm.obj.get("contraction").map(_.num).getOrElse(1.0)
       interval >= 2 && on.value.get("deepcache").exists { dc =>
         dc("interval").num.toInt == interval && dc("branch").num.toInt == 0 &&
-        dc("full_first").num.toInt == 5 && dc("order").num.toInt == order
+        dc("full_first").num.toInt == 5 && dc("order").num.toInt == order &&
+        math.abs(dc.obj.get("contraction").map(_.num).getOrElse(1.0) - contraction) < 1e-6
       }
     }
     if fastModeOwnedDeepCache then on.value.remove("deepcache")
+    val fastModeOwnedCfgCache = on.value.get("fast_mode").exists { fm =>
+      val ccInterval = fm.obj.get("cfg_cache_interval").map(_.num.toInt).getOrElse(0)
+      ccInterval >= 2 && on.value.get("cfg_cache").exists { cc =>
+        cc("interval").num.toInt == ccInterval && math.abs(cc("start").num - 0.25) < 1e-6 &&
+        cc.obj.get("adaptive_threshold").map(_.num).getOrElse(0.0) == 0.0 &&
+        cc.obj.get("hf_weight").map(_.num).getOrElse(0.0) == 0.0
+      }
+    }
+    if fastModeOwnedCfgCache then on.value.remove("cfg_cache")
     val fastModeOwnedTGate = on.value.get("fast_mode").exists { fm =>
       val gateStep = fm("gate_step").num.toInt
       gateStep >= 1 && on.value.get("tgate").exists(tg => tg("gate_step").num.toInt == gateStep)
@@ -257,6 +270,8 @@ object InspectGenerationMetadata:
       (if on.value.contains("clip_io") then ClipIoPlugin.InfotextKeys.toSet else Set.empty[String]) ++
       (if on.value.contains("compile") then CompilePlugin.InfotextKeys.toSet else Set.empty[String]) ++
       (if on.value.contains("deepcache") || fastModeOwnedDeepCache then DeepCachePlugin.InfotextKeys.toSet else Set.empty[String]) ++
+      (if on.value.contains("cfg_cache") || fastModeOwnedCfgCache then CfgCachePlugin.InfotextKeys.toSet else Set.empty[String]) ++
+      (if on.value.contains("postdiff") then PostDiffPlugin.InfotextKeys.toSet else Set.empty[String]) ++
       (if on.value.contains("tgate") || fastModeOwnedTGate then TGatePlugin.InfotextKeys.toSet else Set.empty[String]) ++
       (if fastModeOwnedCfgSchedule then Set("CFG schedule") else Set.empty[String]) ++
       (if on.value.contains("fast_mode") then Set(FastModePlugin.InfotextKey) else Set.empty[String]) ++

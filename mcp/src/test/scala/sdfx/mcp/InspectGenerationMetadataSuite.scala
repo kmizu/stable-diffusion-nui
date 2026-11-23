@@ -698,12 +698,34 @@ class InspectGenerationMetadataSuite extends munit.FunSuite:
     assertEquals(fm("guidance_until").num, 0.7)
     assertEquals(fm("interval").num, 3.0)
     assertEquals(fm("order").num, 1.0)
-    assertEquals(fm("gate_step").num, 8.0)
+    assertEqualsDouble(fm("contraction").num, 0.7, 1e-9)
+    assertEquals(fm("cfg_cache_interval").num, 3.0)
+    assertEquals(fm("gate_step").num, 10.0)
     assert(!fastInspected("always_on").obj.contains("deepcache"))
+    assert(!fastInspected("always_on").obj.contains("cfg_cache"))
     assert(!fastInspected("always_on").obj.contains("tgate"))
     val unapplied = fastInspected("unapplied_fields").obj.keySet
     assert(!unapplied.contains(sdfx.plugins.FastModePlugin.InfotextKey), unapplied)
     assert(!unapplied.contains(sdfx.plugins.TGatePlugin.GateStepKey), unapplied)
     assert(!unapplied.exists(sdfx.plugins.DeepCachePlugin.InfotextKeys.contains), unapplied)
+    assert(!unapplied.exists(sdfx.plugins.CfgCachePlugin.InfotextKeys.contains), unapplied)
     assert(!unapplied.contains("CFG schedule"), unapplied)
+
+    val ccPlugin = new sdfx.plugins.CfgCachePlugin
+    val pdPlugin = new sdfx.plugins.PostDiffPlugin
+    val ccParams = ccPlugin.process(sdfx.core.model.GenerationParams(prompt = "cat"),
+      sdfx.core.plugins.api.Values(sdfx.core.plugins.api.Values.defaults(ccPlugin.controls).map ++
+        Map("enabled" -> "true", "interval" -> "4", "adaptive_threshold" -> "0.95", "hf_weight" -> "0.1")))
+    val combinedParams = pdPlugin.process(ccParams,
+      sdfx.core.plugins.api.Values(Map("enabled" -> "true", "scale" -> "0.5", "portion" -> "0.4")))
+    val ccPdPath = dir.resolve("cc_pd.png")
+    PngMetadata.write(new BufferedImage(4, 4, BufferedImage.TYPE_INT_RGB), ccPdPath,
+      Seq("parameters" -> sdfx.core.infotext.Infotext.write(combinedParams, sdfx.core.infotext.ImageFacts(seed = 4))))
+    val ccPdInspected = InspectGenerationMetadata.inspect(ccPdPath.toString, policy, dir)
+    assertEquals(ccPdInspected("always_on")("cfg_cache")("interval").num, 4.0)
+    assertEqualsDouble(ccPdInspected("always_on")("cfg_cache")("adaptive_threshold").num, 0.95, 1e-9)
+    assertEqualsDouble(ccPdInspected("always_on")("postdiff")("scale").num, 0.5, 1e-9)
+    assertEqualsDouble(ccPdInspected("always_on")("postdiff")("portion").num, 0.4, 1e-9)
+    assert(!ccPdInspected("unapplied_fields").obj.keySet.exists(k =>
+      sdfx.plugins.CfgCachePlugin.InfotextKeys.contains(k) || sdfx.plugins.PostDiffPlugin.InfotextKeys.contains(k)))
   }

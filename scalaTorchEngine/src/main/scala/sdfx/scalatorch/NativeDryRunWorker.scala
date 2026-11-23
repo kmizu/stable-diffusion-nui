@@ -11,7 +11,7 @@ import javax.imageio.ImageIO
 object NativeDryRunWorker:
   val Features: Seq[String] = Seq(
     "img2img_hires_fix", "loopback_scaler", "tokenizer", "latent_upscale", "inpaint_difference",
-    "gpu_temperature_guard", "rescale_cfg", "cfg_schedule", "sada", "tgate", "resharpen",
+    "gpu_temperature_guard", "rescale_cfg", "cfg_schedule", "cfg_cache", "postdiff", "sada", "tgate", "resharpen",
     "latent_mirroring", "color_grading", "anti_burn", "vectorscope_cc", "detail_daemon", "vae_tools",
     "model_keyword", "freeu", "deepcache", "dynamic_thresholding", "tiling", "cads", "hypertile",
     "metadata_utils", "model_sampling", "apg", "mahiro", "pag", "weight_gradient", "negpip",
