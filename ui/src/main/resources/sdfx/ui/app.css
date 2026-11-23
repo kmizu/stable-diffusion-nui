@@ -709,3 +709,76 @@
 
 /* Native model browser */
 .model-browser-status { -fx-wrap-text: true; }
+
+/* Preview expand button + full-window image lightbox */
+.preview-expand-btn {
+    -fx-background-color: rgba(16, 18, 24, 0.72);
+    -fx-background-radius: 6;
+    -fx-border-color: rgba(255, 255, 255, 0.14);
+    -fx-border-radius: 6;
+    -fx-padding: 5 7 5 7;
+    -fx-cursor: hand;
+}
+.preview-expand-btn:hover {
+    -fx-background-color: rgba(16, 18, 24, 0.92);
+    -fx-border-color: rgba(255, 255, 255, 0.30);
+}
+.preview-expand-btn .svg-icon { -fx-stroke: #f3f4f6; }
+
+.lightbox-overlay {
+    -fx-background-color: rgba(10, 12, 16, 0.92);
+}
+.lightbox-topbar {
+    -fx-background-color: linear-gradient(to bottom, rgba(10, 12, 16, 0.85), rgba(10, 12, 16, 0.0));
+    -fx-padding: 12 18 18 18;
+}
+.lightbox-title {
+    -fx-text-fill: #f9fafb;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+}
+.lightbox-meta {
+    -fx-text-fill: #cbd5e1;
+    -fx-font-size: 12px;
+}
+.lightbox-btn {
+    -fx-background-color: rgba(255, 255, 255, 0.12);
+    -fx-background-insets: 0;
+    -fx-background-radius: 6;
+    -fx-border-color: rgba(255, 255, 255, 0.16);
+    -fx-border-radius: 6;
+    -fx-text-fill: #f8fafc;
+    -fx-font-weight: bold;
+    -fx-padding: 5 10 5 10;
+    -fx-min-height: 28;
+    -fx-cursor: hand;
+}
+.lightbox-btn:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.22);
+    -fx-border-color: rgba(255, 255, 255, 0.34);
+}
+.lightbox-btn .svg-icon { -fx-stroke: #f8fafc; }
+.lightbox-nav-btn {
+    -fx-background-color: rgba(16, 18, 24, 0.72);
+    -fx-background-insets: 0;
+    -fx-background-radius: 22;
+    -fx-border-color: rgba(255, 255, 255, 0.22);
+    -fx-border-radius: 22;
+    -fx-min-width: 42;
+    -fx-min-height: 42;
+    -fx-pref-width: 42;
+    -fx-pref-height: 42;
+    -fx-cursor: hand;
+}
+.lightbox-nav-btn:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.22);
+    -fx-border-color: rgba(255, 255, 255, 0.42);
+}
+.lightbox-nav-btn .svg-icon { -fx-stroke: #ffffff; }
+.lightbox-status {
+    -fx-text-fill: #e2e8f0;
+    -fx-font-size: 13px;
+    -fx-background-color: rgba(16, 18, 24, 0.78);
+    -fx-background-radius: 8;
+    -fx-padding: 8 14 8 14;
+}

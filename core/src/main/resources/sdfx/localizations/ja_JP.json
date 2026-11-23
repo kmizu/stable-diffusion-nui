@@ -1599,5 +1599,15 @@
  "Python fallback": "Python フォールバック",
  "@@/^Queue \\((\\d+)\\)$/": "キュー ($1)",
  "@@/^(\\d+) active$/": "有効 $1 件",
- "DeepCache + T-GATE + CFG 70%": "DeepCache・T-GATE・CFG 70%"
+ "DeepCache + T-GATE + CFG 70%": "DeepCache・T-GATE・CFG 70%",
+ "Enlarge": "拡大表示",
+ "Enlarge image (click image)": "画像を拡大表示（画像をクリック）",
+ "Click: enlarge · Ctrl+wheel: zoom · drag: pan": "クリックで拡大 · Ctrl+ホイールで拡縮 · ドラッグで移動",
+ "Close (Esc)": "閉じる (Esc)",
+ "Previous image (Left)": "前の画像 (←)",
+ "Next image (Right)": "次の画像 (→)",
+ "Actual size (100%)": "原寸表示 (100%)",
+ "Fit to window": "ウィンドウに合わせる",
+ "Zoom in (+)": "拡大 (+)",
+ "Zoom out (-)": "縮小 (-)"
 }

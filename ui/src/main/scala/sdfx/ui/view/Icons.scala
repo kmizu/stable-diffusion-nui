@@ -111,6 +111,12 @@ object Icons:
   def chevronRight(size: Double = 12): StackPane =
     path("M9 6l6 6-6 6", size)
 
+  def chevronLeft(size: Double = 18): StackPane =
+    path("M15 6l-6 6 6 6", size)
+
+  def maximize(size: Double = 14): StackPane =
+    path("M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7", size)
+
   def sidebarToggle(size: Double = 15): StackPane =
     path("M4 4h16v16H4zM9 4v16", size)
 

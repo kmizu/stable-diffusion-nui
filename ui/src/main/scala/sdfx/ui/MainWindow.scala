@@ -368,7 +368,15 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   layout.setLeft(navRail.node)
   layout.setCenter(mainSplit)
   layout.setBottom(statusBar.node)
-  val root = new StackPane(layout, ctx.toaster.layer)
+  private val lightbox = new ImageLightbox(
+    ctx,
+    delta => {
+      gallery.selectNeighbor(delta)
+      Option(gallery.list.getSelectionModel.getSelectedItem).map(_.path)
+    },
+    () => galleryVM.filtered.size > 1
+  )
+  val root = new StackPane(layout, lightbox.node, ctx.toaster.layer)
   val scene = new Scene(root, initial.window.width, initial.window.height)
   Theme.apply(scene, services.settings.theme)
 
@@ -523,6 +531,8 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
     select(m)
     ctx.info(s"Prompt sent to ${m.label}")
   ctx.showImage = p => preview.show(p)
+  ctx.openLightbox = (p, nav) => lightbox.openPath(p, allowGalleryNav = nav)
+  ctx.openLightboxImage = (img, title) => lightbox.openImage(img, title)
   ctx.sendToPanorama = p => { tabs.getSelectionModel.select(panoramaTab); panorama.open(p) }
   ctx.sendToExtras = p => { extras.image.set(p.toString); tabs.getSelectionModel.select(extrasTab); ctx.info("Sent to Extras") }
   ctx.openStylesEditor = () => { stylesEditor.reload(); tabs.getSelectionModel.select(stylesTab) }
@@ -1142,24 +1152,34 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
 
   scene.addEventFilter(KeyEvent.KEY_PRESSED, (e: KeyEvent) =>
     val k = e.getCode
-    val promptEditor = panels(activeMode).prompts
-    if k == KeyCode.ENTER && e.isShortcutDown && !promptEditor.isComposingInput then
-      generate(queueOnly = e.isShiftDown)
-      e.consume()
-    else if k == KeyCode.ESCAPE && progress.get.running && !promptEditor.isComposingInput && !promptEditor.completionVisible && !promptEditor.completionPending then
-      interrupt()
-      e.consume()
-    else if e.isShortcutDown && k == KeyCode.V && !typing && activeMode.usesInitImage && tabs.getSelectionModel.getSelectedItem == modeTabs(activeMode) then
-      activeMode match
-        case Mode.Inpaint => panels(Mode.Inpaint).mask.foreach(_.paste())
-        case m            => panels(m).initDrop.foreach(_.paste())
-      e.consume()
-    else if e.isShortcutDown && (k == KeyCode.Z || k == KeyCode.Y) && !typing && tabs.getSelectionModel.getSelectedItem == modeTabs(Mode.Inpaint) then
-      panels(Mode.Inpaint).mask.foreach(m => if k == KeyCode.Z && !e.isShiftDown then m.undo() else m.redo())
-      e.consume()
-    else if (k == KeyCode.LEFT || k == KeyCode.RIGHT) && (scene.getFocusOwner == null || scene.getFocusOwner.isInstanceOf[ZoomImageView]) then
-      gallery.selectNeighbor(if k == KeyCode.LEFT then -1 else 1)
-      e.consume()
+    if lightbox.isShowing then
+      k match
+        case KeyCode.ESCAPE                        => lightbox.close(); e.consume()
+        case KeyCode.LEFT                          => lightbox.navigate(-1); e.consume()
+        case KeyCode.RIGHT                         => lightbox.navigate(1); e.consume()
+        case KeyCode.PLUS | KeyCode.EQUALS | KeyCode.ADD => lightbox.zoomIn(); e.consume()
+        case KeyCode.MINUS | KeyCode.SUBTRACT      => lightbox.zoomOut(); e.consume()
+        case KeyCode.DIGIT0 | KeyCode.NUMPAD0      => lightbox.resetZoom(); e.consume()
+        case _                                     => ()
+    else
+      val promptEditor = panels(activeMode).prompts
+      if k == KeyCode.ENTER && e.isShortcutDown && !promptEditor.isComposingInput then
+        generate(queueOnly = e.isShiftDown)
+        e.consume()
+      else if k == KeyCode.ESCAPE && progress.get.running && !promptEditor.isComposingInput && !promptEditor.completionVisible && !promptEditor.completionPending then
+        interrupt()
+        e.consume()
+      else if e.isShortcutDown && k == KeyCode.V && !typing && activeMode.usesInitImage && tabs.getSelectionModel.getSelectedItem == modeTabs(activeMode) then
+        activeMode match
+          case Mode.Inpaint => panels(Mode.Inpaint).mask.foreach(_.paste())
+          case m            => panels(m).initDrop.foreach(_.paste())
+        e.consume()
+      else if e.isShortcutDown && (k == KeyCode.Z || k == KeyCode.Y) && !typing && tabs.getSelectionModel.getSelectedItem == modeTabs(Mode.Inpaint) then
+        panels(Mode.Inpaint).mask.foreach(m => if k == KeyCode.Z && !e.isShiftDown then m.undo() else m.redo())
+        e.consume()
+      else if (k == KeyCode.LEFT || k == KeyCode.RIGHT) && (scene.getFocusOwner == null || scene.getFocusOwner.isInstanceOf[ZoomImageView]) then
+        gallery.selectNeighbor(if k == KeyCode.LEFT then -1 else 1)
+        e.consume()
   )
   preview.zoom.setFocusTraversable(true)
   preview.zoom.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_PRESSED, (_: javafx.scene.input.MouseEvent) => preview.zoom.requestFocus())

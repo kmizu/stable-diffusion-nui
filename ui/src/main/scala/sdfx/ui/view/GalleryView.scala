@@ -71,6 +71,13 @@ final class GalleryView(ctx: UiContext, vm: GalleryVM, actions: ImageActions, on
       Option(getItem).foreach(it => menu(it).show(this, e.getScreenX, e.getScreenY))
       e.consume()
     )
+    setOnMouseClicked(e =>
+      if e.getButton == javafx.scene.input.MouseButton.PRIMARY && e.getClickCount == 2 then
+        Option(getItem).foreach { it =>
+          ctx.openLightbox(it.path, true)
+          e.consume()
+        }
+    )
     override def updateItem(item: GalleryItem, empty: Boolean): Unit =
       super.updateItem(item, empty)
       setText(null)
@@ -113,6 +120,8 @@ final class GalleryView(ctx: UiContext, vm: GalleryVM, actions: ImageActions, on
       m.setOnAction(_ => f)
       m
     new ContextMenu(
+      mi("Enlarge")(ctx.openLightbox(it.path, true)),
+      new SeparatorMenuItem(),
       mi("Send to img2img")(actions.sendTo(Mode.Img2Img, it.path, it.parameters)),
       mi("Send to Inpaint")(actions.sendTo(Mode.Inpaint, it.path, it.parameters)),
       mi("View as panorama")(ctx.sendToPanorama(it.path)),

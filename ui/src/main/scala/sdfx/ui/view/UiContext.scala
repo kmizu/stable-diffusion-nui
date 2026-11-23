@@ -84,6 +84,10 @@ final class UiContext(val services: AppServices, val catalog: CatalogVM, val sta
   var sendToPanorama: Path => Unit = _ => ()
   /** Wired by the main window: show an image in the big preview. */
   var showImage: Path => Unit = _ => ()
+  /** Wired by the main window: open an image path in the full-window lightbox (second arg enables gallery navigation). */
+  var openLightbox: (Path, Boolean) => Unit = (_, _) => ()
+  /** Wired by the main window: open an in-memory image (such as a live preview) in the full-window lightbox. */
+  var openLightboxImage: (javafx.scene.image.Image, String) => Unit = (_, _) => ()
   /** Read-only comparison routes, wired by MainWindow. */
   var comparePair: (Path, Path) => Unit = (_, _) => ()
   /** Shared native cancellation route; MainWindow includes its job loop and truthful action feedback. */

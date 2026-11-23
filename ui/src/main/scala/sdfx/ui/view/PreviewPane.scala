@@ -63,13 +63,21 @@ final class PreviewPane(ctx: UiContext, actions: ImageActions):
   banner.setManaged(false)
   private val liveBadge = W.label("LIVE PREVIEW", "live-badge")
   liveBadge.setVisible(false)
-  private val stack = new StackPane(empty, zoom, liveBadge, banner)
+  private val expandBtn = W.vectorButton(Icons.maximize(14), "Enlarge image (click image)")(openLightbox())
+  expandBtn.getStyleClass.add("preview-expand-btn")
+  expandBtn.setId("preview-enlarge-btn")
+  expandBtn.setVisible(false)
+  expandBtn.setManaged(false)
+  private val stack = new StackPane(empty, zoom, liveBadge, expandBtn, banner)
   stack.getStyleClass.add("preview-stack")
   StackPane.setAlignment(liveBadge, Pos.TOP_LEFT)
   StackPane.setMargin(liveBadge, new Insets(10))
+  StackPane.setAlignment(expandBtn, Pos.TOP_RIGHT)
+  StackPane.setMargin(expandBtn, new Insets(10))
   StackPane.setAlignment(banner, Pos.TOP_CENTER)
   StackPane.setMargin(banner, new Insets(14))
-  W.tip(zoom, "Ctrl+wheel: zoom · drag: pan · double click: fit / 100%")
+  zoom.onImageClick = Some(() => openLightbox())
+  W.tip(zoom, "Click: enlarge · Ctrl+wheel: zoom · drag: pan")
 
   private val info = new TextArea()
   info.setEditable(false)
@@ -142,12 +150,21 @@ final class PreviewPane(ctx: UiContext, actions: ImageActions):
   private var liveBusy = false
   private var liveNext: Option[String] = None
 
+  private def openLightbox(): Unit =
+    if zoom.getUserData != null then current.foreach((p, _) => ctx.openLightbox(p, true))
+    else Option(zoom.image).filter(!_.isError).foreach(img => ctx.openLightboxImage(img, "Live preview"))
+
+  private def setExpandVisible(visible: Boolean): Unit =
+    expandBtn.setVisible(visible)
+    expandBtn.setManaged(visible)
+
   /** Shows a saved image; parameters are read from the PNG unless given. */
   def show(path: Path, infotext: Option[String] = None): Unit =
     zoom.setUserData(path)
     shownGeneration += 1
     liveNext = None
     liveBadge.setVisible(false)
+    setExpandVisible(false)
     zoom.setImage(null)
     empty.setText("Loading image…")
     empty.setVisible(true)
@@ -157,10 +174,12 @@ final class PreviewPane(ctx: UiContext, actions: ImageActions):
       case scala.util.Success(display) if zoom.getUserData == path =>
         zoom.setImage(display.image)
         empty.setVisible(false)
+        setExpandVisible(true)
         if display.scrambled && display.passwordVerified.isEmpty then
           fileLabel.setText(path.getFileName.toString + " · password unverified")
       case scala.util.Failure(error) if zoom.getUserData == path =>
         zoom.setImage(null)
+        setExpandVisible(false)
         empty.setText("Cannot display image: " + Fx.message(error).stripPrefix("requirement failed: "))
         empty.setVisible(true)
       case _ => ()
@@ -187,6 +206,7 @@ final class PreviewPane(ctx: UiContext, actions: ImageActions):
           zoom.setImage(img)
           empty.setVisible(false)
           liveBadge.setVisible(true)
+          setExpandVisible(true)
         liveNext.foreach { n =>
           liveNext = None
           showLive(n)
@@ -211,6 +231,7 @@ final class PreviewPane(ctx: UiContext, actions: ImageActions):
     zoom.setImage(null)
     empty.setVisible(true)
     liveBadge.setVisible(false)
+    setExpandVisible(false)
     fileLabel.setText("")
     info.clear()
 

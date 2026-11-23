@@ -1,12 +1,13 @@
 package sdfx.ui.view
 
+import javafx.scene.Cursor
 import javafx.scene.image.{Image, ImageView}
 import javafx.scene.input.{MouseButton, ScrollEvent}
 import javafx.scene.layout.Region
 import javafx.scene.shape.Rectangle
 import sdfx.ui.vm.MaskGeometry
 
-/** Image viewer: fit by default, Ctrl+wheel zoom around the cursor, drag to pan, double click = fit / 100%. */
+/** Image viewer: fit by default, wheel/Ctrl+wheel zoom around the cursor, drag to pan, double click = fit / 100%. */
 final class ZoomImageView extends Region:
   private val view = new ImageView()
   view.setSmooth(true)
@@ -22,7 +23,18 @@ final class ZoomImageView extends Region:
   private var oy = 0.0
   private var dragFrom: Option[(Double, Double, Double, Double)] = None
 
+  /** When true, scrolling the mouse wheel zooms without holding Ctrl (used inside the fullscreen lightbox). */
+  var wheelZoomWithoutCtrl: Boolean = false
+  /** Fired on a single primary click directly on the fitted image. */
+  var onImageClick: Option[() => Unit] = None
+  /** Fired on a single primary click outside the rendered image bounds. */
+  var onBackdropClick: Option[() => Unit] = None
+  /** Fired whenever the image or zoom level changes. */
+  var onZoomChanged: Option[() => Unit] = None
+
   def image: Image = view.getImage
+  def isZoomed: Boolean = zoom.isDefined
+  def zoomFactor: Option[Double] = zoom
 
   private var lastSize: Option[(Double, Double)] = None
 
@@ -35,6 +47,7 @@ final class ZoomImageView extends Region:
       zoom = None
       lastSize = None
       requestLayout()
+      onZoomChanged.foreach(_())
     else
       view.setVisible(false)
       ImageFiles.whenLoaded(img) {
@@ -44,11 +57,19 @@ final class ZoomImageView extends Region:
           lastSize = Some(size)
           view.setVisible(!img.isError)
           requestLayout()
+          onZoomChanged.foreach(_())
       }
 
   def fit(): Unit =
     zoom = None
     requestLayout()
+    onZoomChanged.foreach(_())
+
+  def setZoom100(): Unit =
+    if view.getImage != null then zoomAt(getWidth / 2, getHeight / 2, 1.0)
+
+  def zoomBy(factor: Double): Unit =
+    if view.getImage != null then zoomAt(getWidth / 2, getHeight / 2, currentScale * factor)
 
   private def imgSize: (Double, Double) =
     val i = view.getImage
@@ -57,6 +78,10 @@ final class ZoomImageView extends Region:
   private def currentScale: Double =
     val (iw, ih) = imgSize
     zoom.getOrElse(MaskGeometry.fit(iw, ih, getWidth, getHeight).scale)
+
+  def isPointOnImage(x: Double, y: Double): Boolean =
+    val i = view.getImage
+    i != null && !i.isError && ZoomImageView.hitTestImage(x, y, ox, oy, view.getFitWidth, view.getFitHeight)
 
   override protected def layoutChildren(): Unit =
     val (iw, ih) = imgSize
@@ -81,24 +106,35 @@ final class ZoomImageView extends Region:
 
   private def zoomAt(x: Double, y: Double, z: Double): Unit =
     val s = currentScale
-    val nz = z.max(0.05).min(16)
+    val nz = ZoomImageView.clampZoom(z)
     val ix = (x - ox) / s
     val iy = (y - oy) / s
     ox = x - ix * nz
     oy = y - iy * nz
     zoom = Some(nz)
     requestLayout()
+    onZoomChanged.foreach(_())
+
+  private def updateHoverCursor(x: Double, y: Double): Unit =
+    if dragFrom.isDefined then setCursor(Cursor.CLOSED_HAND)
+    else if view.getImage != null && isPointOnImage(x, y) then
+      if zoom.isDefined then setCursor(Cursor.OPEN_HAND)
+      else if onImageClick.isDefined then setCursor(Cursor.HAND)
+      else setCursor(Cursor.DEFAULT)
+    else setCursor(Cursor.DEFAULT)
 
   addEventFilter(ScrollEvent.SCROLL, (e: ScrollEvent) =>
-    if e.isShortcutDown && view.getImage != null then
+    if (wheelZoomWithoutCtrl || e.isShortcutDown) && view.getImage != null then
       val f = if e.getDeltaY > 0 then 1.2 else 1 / 1.2
       zoomAt(e.getX, e.getY, currentScale * f)
       e.consume()
   )
+  setOnMouseMoved(e => updateHoverCursor(e.getX, e.getY))
+  setOnMouseExited(_ => if dragFrom.isEmpty then setCursor(Cursor.DEFAULT))
   setOnMousePressed(e =>
     if e.getButton == MouseButton.PRIMARY && zoom.isDefined then
       dragFrom = Some((e.getX, e.getY, ox, oy))
-      setCursor(javafx.scene.Cursor.CLOSED_HAND)
+      setCursor(Cursor.CLOSED_HAND)
   )
   setOnMouseDragged(e =>
     dragFrom.foreach { (sx, sy, sox, soy) =>
@@ -107,11 +143,31 @@ final class ZoomImageView extends Region:
       requestLayout()
     }
   )
-  setOnMouseReleased(_ =>
+  setOnMouseReleased(e =>
     dragFrom = None
-    setCursor(javafx.scene.Cursor.DEFAULT)
+    updateHoverCursor(e.getX, e.getY)
   )
   setOnMouseClicked(e =>
-    if e.getButton == MouseButton.PRIMARY && e.getClickCount == 2 && view.getImage != null then
-      if zoom.isDefined then fit() else zoomAt(e.getX, e.getY, 1.0)
+    if e.getButton == MouseButton.PRIMARY && e.isStillSincePress then
+      if e.getClickCount == 1 then
+        if view.getImage != null && isPointOnImage(e.getX, e.getY) && zoom.isEmpty && onImageClick.isDefined then
+          onImageClick.foreach(_())
+          e.consume()
+        else if onBackdropClick.isDefined && (view.getImage == null || !isPointOnImage(e.getX, e.getY)) then
+          onBackdropClick.foreach(_())
+          e.consume()
+      else if e.getClickCount == 2 && view.getImage != null && (onImageClick.isEmpty || zoom.isDefined) then
+        if zoom.isDefined then fit() else zoomAt(e.getX, e.getY, 1.0)
+        e.consume()
   )
+
+object ZoomImageView:
+  def hitTestImage(x: Double, y: Double, ox: Double, oy: Double, width: Double, height: Double): Boolean =
+    width > 0 && height > 0 && x >= ox && x <= ox + width && y >= oy && y <= oy + height
+
+  def clampZoom(z: Double): Double =
+    z.max(0.05).min(16.0)
+
+  def formatMeta(imgW: Double, imgH: Double, zoom: Option[Double]): String =
+    if imgW <= 0 || imgH <= 0 then ""
+    else s"${imgW.round} × ${imgH.round} · ${zoom.fold("Fit")(z => s"${(z * 100).round}%")}"

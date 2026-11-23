@@ -102,6 +102,8 @@ final class ExtrasTab(ctx: UiContext, initialUpscaler: String, initialScale: Dou
   resultView.setPrefHeight(320)
   resultView.setMinHeight(240)
   resultView.getStyleClass.add("result-view")
+  resultView.onImageClick = Some(() => Option(resultView.getUserData).collect { case p: Path => ctx.openLightbox(p, false) })
+  W.tip(resultView, "Click: enlarge · Ctrl+wheel: zoom · drag: pan")
   private val resultInfo = W.label("", "hint")
   resultInfo.setId("extras-result-info")
   private val correctionOutputs = new ComboBox[String]()
