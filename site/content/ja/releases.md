@@ -8,7 +8,7 @@ description: Stable Diffusion NUI（旧 SDFX）の各リリースで追加・変
 
 ## v0.1
 
-2026-11-02 公開。[GitHub のリリースページ](https://github.com/kmizu/stablediffusion-nui/releases/tag/v0.1)
+2026-11-02 公開。[GitHub のリリースページ](https://github.com/kmizu/stable-diffusion-nui/releases/tag/v0.1)
 
 日本語パックを内蔵し、[設定方法](localization.html)と[最初の画像の作り方](first-image.html)を案内しています。日本語化は部分的で、重複を除く実画面の文言の 74.1% が対象です。v0.06 以降の Panorama、compile、Prompt Tools、State Manager、タグ補完、Corridor Crawler は部分実装です。
 
@@ -16,7 +16,7 @@ description: Stable Diffusion NUI（旧 SDFX）の各リリースで追加・変
 
 ## v0.06
 
-2026-11-02 公開。[GitHub のリリースページ](https://github.com/kmizu/stablediffusion-nui/releases/tag/v0.06)
+2026-11-02 公開。[GitHub のリリースページ](https://github.com/kmizu/stable-diffusion-nui/releases/tag/v0.06)
 
 ### 追加
 
@@ -34,7 +34,7 @@ description: Stable Diffusion NUI（旧 SDFX）の各リリースで追加・変
 
 ## v0.05
 
-2026-11-02 公開。[GitHub のリリースページ](https://github.com/kmizu/stablediffusion-nui/releases/tag/v0.05)
+2026-11-02 公開。[GitHub のリリースページ](https://github.com/kmizu/stable-diffusion-nui/releases/tag/v0.05)
 
 v0.04 から拡張機能を 10 件追加しました。
 
@@ -55,7 +55,7 @@ v0.04 から拡張機能を 10 件追加しました。
 
 ## v0.04
 
-2026-11-01 公開。[GitHub のリリースページ](https://github.com/kmizu/stablediffusion-nui/releases/tag/v0.04)
+2026-11-01 公開。[GitHub のリリースページ](https://github.com/kmizu/stable-diffusion-nui/releases/tag/v0.04)
 
 v0.03 以降に 10 件の issue を解決し、AI エージェントから MCP で使うためのワークフローを追加しました。
 
@@ -84,7 +84,7 @@ ZIP の SHA-256: `b58c4a8dab854598f3e5072408ba24c37cf15996f8766d40ccc798ef62d38c
 
 ## v0.03
 
-2026-10-27 公開。[GitHub のリリースページ](https://github.com/kmizu/stablediffusion-nui/releases/tag/v0.03)
+2026-10-27 公開。[GitHub のリリースページ](https://github.com/kmizu/stable-diffusion-nui/releases/tag/v0.03)
 
 Stable Diffusion FX の名前を **Stable Diffusion NUI** に変更しました。
 
@@ -109,7 +109,7 @@ ZIP の SHA-256: `75fca7e13167e0e5846d78904653bdc41710ebd04863a6c84fb82e577c5ea3
 
 ## v0.02
 
-2026-10-27 公開。[GitHub のリリースページ](https://github.com/kmizu/stablediffusion-nui/releases/tag/v0.02)
+2026-10-27 公開。[GitHub のリリースページ](https://github.com/kmizu/stable-diffusion-nui/releases/tag/v0.02)
 
 ### 追加・変更
 
@@ -131,7 +131,7 @@ ZIP の SHA-256: `057d0128942fbeb8979d4379688094d8963dff218d41c0323d9507432ef594
 
 ## v0.01
 
-2026-10-27 公開。[GitHub のリリースページ](https://github.com/kmizu/stablediffusion-nui/releases/tag/v0.01)
+2026-10-27 公開。[GitHub のリリースページ](https://github.com/kmizu/stable-diffusion-nui/releases/tag/v0.01)
 
 SDFX の Windows 向けプレビュー版です。
 

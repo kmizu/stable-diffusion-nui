@@ -1,6 +1,6 @@
 # Third-party notices
 
-stablediffusion-fx is licensed under the GNU Affero General Public License v3.0 (see LICENSE), because it ports
+stable-diffusion-nui is licensed under the GNU Affero General Public License v3.0 (see LICENSE), because it ports
 code from AGPL-3.0 (AUTOMATIC1111 web UI, Forge, reForge) and GPL-3.0 (ComfyUI, Fooocus) projects.
 
 How each project is used:

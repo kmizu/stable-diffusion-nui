@@ -169,9 +169,9 @@ async def exercise(client, args, receipt):
 
 async def run(args, receipt):
     if args.launcher:
-        bundled_jar = args.launcher.resolve().parent / "app" / "stablediffusion-nui.jar"
+        bundled_jar = args.launcher.resolve().parent / "app" / "stable-diffusion-nui.jar"
         if not bundled_jar.is_file() or hashlib.sha256(bundled_jar.read_bytes()).digest() != hashlib.sha256(args.jar.read_bytes()).digest():
-            raise ValueError("--jar must match the extracted launcher's app/stablediffusion-nui.jar")
+            raise ValueError("--jar must match the extracted launcher's app/stable-diffusion-nui.jar")
     app_home = (args.output / "app-home").resolve()
     (app_home / "config").mkdir(parents=True, exist_ok=True)
     # AppHome.detect() only accepts a home that has python/sdfx (an empty folder is enough: a regular package elsewhere wins)

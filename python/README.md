@@ -1,6 +1,6 @@
 # sdfx engine (Python)
 
-Inference engine for stablediffusion-fx. The Scala/JavaFX app starts it as `python -m sdfx` (cwd = this
+Inference engine for stable-diffusion-nui. The Scala/JavaFX app starts it as `python -m sdfx` (cwd = this
 directory) and talks JSON Lines over stdin/stdout; the contract is
 `core/src/main/scala/sdfx/core/protocol/Protocol.scala`. Only protocol lines are written to stdout;
 logs and library output go to stderr.

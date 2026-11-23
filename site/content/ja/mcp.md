@@ -29,7 +29,7 @@ Stable Diffusion NUI には MCP サーバーが入っています。Claude Code 
 
 - Windows パッケージ: `C:/apps/SDNUI/SDNUI.exe --mcp --home C:/apps/SDNUI`。同梱の Java ランタイムを使います。先にこのホームで Python 環境とモデルフォルダを設定しておいてください。
 - ソースのチェックアウト: `run.bat --mcp`。ランチャーは stdout に何も出さず、JavaFX を初期化せずに `sdfx.mcp.McpMain` を起動します。
-- jar: `java -cp target/stablediffusion-nui.jar sdfx.mcp.McpMain --home <dir>`
+- jar: `java -cp target/stable-diffusion-nui.jar sdfx.mcp.McpMain --home <dir>`
 
 `C:/apps/SDNUI` はインストール先のフォルダに置き換えてください。
 
@@ -73,27 +73,27 @@ Stable Diffusion NUI には MCP サーバーが入っています。Claude Code 
 ヘッドレス（Windows パッケージ）:
 
 ```sh
-claude mcp add stablediffusion-nui -- C:/apps/SDNUI/SDNUI.exe --mcp --home C:/apps/SDNUI
+claude mcp add stable-diffusion-nui -- C:/apps/SDNUI/SDNUI.exe --mcp --home C:/apps/SDNUI
 ```
 
 ヘッドレス（ソースのチェックアウト、または jar）:
 
 ```sh
-claude mcp add stablediffusion-nui -- C:/path/to/stablediffusion-nui/run.bat --mcp
-claude mcp add stablediffusion-nui -- java -cp C:/path/to/stablediffusion-nui/target/stablediffusion-nui.jar sdfx.mcp.McpMain --home C:/path/to/stablediffusion-nui
+claude mcp add stable-diffusion-nui -- C:/path/to/stable-diffusion-nui/run.bat --mcp
+claude mcp add stable-diffusion-nui -- java -cp C:/path/to/stable-diffusion-nui/target/stable-diffusion-nui.jar sdfx.mcp.McpMain --home C:/path/to/stable-diffusion-nui
 ```
 
 GPU なしで試す:
 
 ```sh
-claude mcp add stablediffusion-nui-dry -- C:/path/to/stablediffusion-nui/run.bat --mcp --dry-run
+claude mcp add stable-diffusion-nui-dry -- C:/path/to/stable-diffusion-nui/run.bat --mcp --dry-run
 ```
 
 起動中の GUI に HTTP で接続する（トークンなし／あり）:
 
 ```sh
-claude mcp add --transport http stablediffusion-nui-gui http://127.0.0.1:7861/mcp
-claude mcp add --transport http stablediffusion-nui-gui http://127.0.0.1:7861/mcp --header "Authorization: Bearer <token>"
+claude mcp add --transport http stable-diffusion-nui-gui http://127.0.0.1:7861/mcp
+claude mcp add --transport http stable-diffusion-nui-gui http://127.0.0.1:7861/mcp --header "Authorization: Bearer <token>"
 ```
 
 ### プロジェクトの `.mcp.json`
@@ -103,7 +103,7 @@ claude mcp add --transport http stablediffusion-nui-gui http://127.0.0.1:7861/mc
 ```json
 {
   "mcpServers": {
-    "stablediffusion-nui": {
+    "stable-diffusion-nui": {
       "command": "C:/apps/SDNUI/SDNUI.exe",
       "args": ["--mcp", "--home", "C:/apps/SDNUI"]
     }

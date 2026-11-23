@@ -16,7 +16,7 @@ from pathlib import Path
 import markdown
 
 SITE = Path(__file__).resolve().parent
-REPO = "https://github.com/kmizu/stablediffusion-nui"
+REPO = "https://github.com/kmizu/stable-diffusion-nui"
 RELEASES = REPO + "/releases/latest"
 
 # Page order and sidebar groups. Slugs are shared by both languages.

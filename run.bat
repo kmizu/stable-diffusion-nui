@@ -30,9 +30,9 @@ if %SDFX_MAJORN% LSS 17 (
   exit /b 1
 )
 
-set "SDFX_JAR=%~dp0target\stablediffusion-nui.jar"
+set "SDFX_JAR=%~dp0target\stable-diffusion-nui.jar"
 if not exist "%SDFX_JAR%" (
-  >&2 echo [sdfx] target\stablediffusion-nui.jar is missing, building it with sbt ^(or run scripts\build.bat^)...
+  >&2 echo [sdfx] target\stable-diffusion-nui.jar is missing, building it with sbt ^(or run scripts\build.bat^)...
   where sbt >nul 2>nul
   if errorlevel 1 (
     >&2 echo [sdfx] sbt was not found. Install sbt, then run scripts\build.bat.

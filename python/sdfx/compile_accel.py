@@ -123,8 +123,11 @@ def available() -> list[str]:
 
 
 def cache_dir() -> str:
-    base = os.environ.get("SDFX_TRT_CACHE") or os.path.join(os.path.expanduser("~"), ".cache",
-                                                           "stablediffusion-nui", "tensorrt")
+    base = os.environ.get("SDFX_TRT_CACHE")
+    if not base:
+        primary = os.path.join(os.path.expanduser("~"), ".cache", "stable-diffusion-nui", "tensorrt")
+        legacy = os.path.join(os.path.expanduser("~"), ".cache", "stablediffusion-nui", "tensorrt")
+        base = legacy if not os.path.exists(primary) and os.path.exists(legacy) else primary
     os.makedirs(base, exist_ok=True)
     return base
 

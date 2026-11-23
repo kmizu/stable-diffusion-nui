@@ -11,7 +11,7 @@ $package = [IO.Path]::GetFullPath($PackageHome)
 $pythonPath = [IO.Path]::GetFullPath($Python)
 $checkpointPath = [IO.Path]::GetFullPath($Checkpoint)
 $exe = Join-Path $package 'SDNUI.exe'
-foreach ($file in @($exe, $pythonPath, $checkpointPath, (Join-Path $package 'app/stablediffusion-nui.jar'), (Join-Path $package 'runtime/bin/server/jvm.dll'))) {
+foreach ($file in @($exe, $pythonPath, $checkpointPath, (Join-Path $package 'app/stable-diffusion-nui.jar'), (Join-Path $package 'runtime/bin/server/jvm.dll'))) {
     if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { throw "Required file missing: $file" }
 }
 # Caller explicitly supplies a disposable extracted package; never follow config links.
@@ -120,5 +120,5 @@ print(json.dumps(result, ensure_ascii=False))
 '@
 $verifier = Join-Path $run 'verify_generation.py'
 [IO.File]::WriteAllText($verifier, $verify, [Text.UTF8Encoding]::new($false))
-& $pythonPath $verifier $outputs $screenshot $checkpointPath $prompt (Join-Path $run 'real-generation-report.json') (Join-Path $package 'app/stablediffusion-nui.jar')
+& $pythonPath $verifier $outputs $screenshot $checkpointPath $prompt (Join-Path $run 'real-generation-report.json') (Join-Path $package 'app/stable-diffusion-nui.jar')
 if ($LASTEXITCODE -ne 0) { throw "PNG/metadata verification failed; artifacts $run" }

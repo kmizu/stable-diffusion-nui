@@ -24,7 +24,7 @@ Expand-Archive -LiteralPath $zipPath -DestinationPath $run
 $packageHome = Join-Path $run 'SDNUI'
 $exe = Join-Path $packageHome 'SDNUI.exe'
 foreach ($required in @($exe, (Join-Path $packageHome 'runtime/bin/server/jvm.dll'),
-                         (Join-Path $packageHome 'app/stablediffusion-nui.jar'), (Join-Path $packageHome 'python/sdfx/__main__.py'))) {
+                         (Join-Path $packageHome 'app/stable-diffusion-nui.jar'), (Join-Path $packageHome 'python/sdfx/__main__.py'))) {
     if (-not (Test-Path -LiteralPath $required -PathType Leaf)) { throw "Package component missing: $required" }
 }
 $weights = @(Get-ChildItem -LiteralPath $packageHome -File -Recurse | Where-Object {

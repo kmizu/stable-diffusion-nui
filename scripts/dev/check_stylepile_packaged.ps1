@@ -6,7 +6,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
-$packagedJar = Join-Path $repoRoot 'target/stablediffusion-nui.jar'
+$packagedJar = Join-Path $repoRoot 'target/stable-diffusion-nui.jar'
 $testClasses = Join-Path $repoRoot 'target/out/jvm/scala-3.3.6/sdfx-ui/test-classes'
 $pythonExe = Join-Path $repoRoot 'python/.venv-smoke/Scripts/python.exe'
 foreach ($required in @($JavaExe, $packagedJar, $pythonExe, (Join-Path $testClasses 'sdfx/ui/RealStylePileCheck.class'))) {

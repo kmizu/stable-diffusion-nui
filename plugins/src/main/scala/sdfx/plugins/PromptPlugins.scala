@@ -69,7 +69,7 @@ class DynamicPromptsPlugin extends Plugin:
     Check("fixed_seed", "Fixed seed (same seed for every prompt)"),
     Check("unlink_negative", "Expand the negative prompt independently"),
     Text("wildcard_dirs", "Extra wildcard folders (; separated)"),
-    Note("help", "Wildcard files live in stablediffusion-fx/wildcards (one option per line, # comments).")
+    Note("help", "Wildcard files live in stable-diffusion-nui/wildcards (one option per line, # comments).")
   )
 
   def expand(p0: GenerationParams, v: Values, trackSources: Boolean = false): Seq[GenerationParams] =

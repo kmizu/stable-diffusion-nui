@@ -12,7 +12,7 @@ Hook (params.hooks["clip_io"]):
   format               "csv" | "pt"       used when a name has no extension
   transpose, no_special_tokens, ignore_emphasis, bypass_normalization, token_strings, overwrite   bool
 
-Files live in the conditioning folder: $SDFX_CLIP_IO_DIR, else ~/.cache/stablediffusion-nui/clip_io/conditioning.
+Files live in the conditioning folder: $SDFX_CLIP_IO_DIR, else ~/.cache/stable-diffusion-nui/clip_io/conditioning.
 Layout: one row per token and one column per embedding dimension (`transpose` swaps them). `token_strings` adds the
 token text as the first column (the first row when transposed). A `.pt` file holds a tensor (tokens x dimension);
 SDXL files are a dict {"cond", "pooled", "tokens"}.
@@ -83,7 +83,11 @@ def normalize(cfg: dict) -> dict:
 
 def conditioning_dir() -> Path:
     configured = os.environ.get(DIR_ENV)
-    return Path(configured) if configured else Path.home() / ".cache" / "stablediffusion-nui" / "clip_io" / "conditioning"
+    if configured:
+        return Path(configured)
+    primary = Path.home() / ".cache" / "stable-diffusion-nui" / "clip_io" / "conditioning"
+    legacy = Path.home() / ".cache" / "stablediffusion-nui" / "clip_io" / "conditioning"
+    return legacy if not primary.exists() and legacy.exists() else primary
 
 
 def _inside(base: Path, name: str) -> Path:

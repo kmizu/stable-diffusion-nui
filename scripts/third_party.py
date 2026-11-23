@@ -1,4 +1,4 @@
-"""Collects the licenses of every project stablediffusion-fx ports code from, re-implements, or depends on.
+"""Collects the licenses of every project stable-diffusion-nui ports code from, re-implements, or depends on.
 
   python scripts/third_party.py        (needs the GitHub CLI `gh`, logged in)
   python scripts/third_party.py --use-archived-licenses
@@ -537,7 +537,7 @@ def main(argv=()):
     md = [
         "# Third-party notices",
         "",
-        "stablediffusion-fx is licensed under the GNU Affero General Public License v3.0 (see LICENSE), because it ports",
+        "stable-diffusion-nui is licensed under the GNU Affero General Public License v3.0 (see LICENSE), because it ports",
         "code from AGPL-3.0 (AUTOMATIC1111 web UI, Forge, reForge) and GPL-3.0 (ComfyUI, Fooocus) projects.",
         "",
         "How each project is used:",

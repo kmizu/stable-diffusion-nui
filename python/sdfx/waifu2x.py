@@ -273,7 +273,11 @@ def model_for(model_id, device='cpu', cache_dir=None, allow_download=True, check
     asset = next((entry for entry in assets() if entry['id'] == model_id), None)
     if asset is None:
         raise EngineError(INVALID_PARAMS, f'Unknown Waifu2x model: {model_id}')
-    directory = cache_dir or os.environ.get('SDFX_WAIFU2X_CACHE') or Path.home() / '.cache' / 'stablediffusion-nui' / 'waifu2x'
+    directory = cache_dir or os.environ.get('SDFX_WAIFU2X_CACHE')
+    if not directory:
+        primary = Path.home() / '.cache' / 'stable-diffusion-nui' / 'waifu2x'
+        legacy = Path.home() / '.cache' / 'stablediffusion-nui' / 'waifu2x'
+        directory = legacy if not primary.exists() and legacy.exists() else primary
     path = materialize(asset, directory, allow_download, check_interrupt)
     key = model_id, str(device), str(path.resolve()), asset['sha256']
     if _model_cache is None or _model_cache[0] != key:

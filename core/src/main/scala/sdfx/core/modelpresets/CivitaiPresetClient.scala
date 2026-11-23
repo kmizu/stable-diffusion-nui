@@ -83,7 +83,7 @@ object CivitaiPresetClient:
       val connection = url.toURL.openConnection().asInstanceOf[HttpURLConnection]
       connection.setInstanceFollowRedirects(false)
       connection.setConnectTimeout(5000); connection.setReadTimeout(1000)
-      connection.setRequestProperty("User-Agent", "StableDiffusion-NUI-ModelPresets")
+      connection.setRequestProperty("User-Agent", "Stable-Diffusion-NUI-ModelPresets")
       try
         val status = connection.getResponseCode
         if Set(301, 302, 303, 307, 308)(status) then

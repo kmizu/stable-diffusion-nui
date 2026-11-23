@@ -56,7 +56,7 @@ async def main(args):
     (home / "config" / "settings.json").write_text(json.dumps({"python_exe": args.python, "output_dir": str(images)}), encoding="utf-8")
     fixture = images / "fixture.png"
     shutil.copyfile(args.fixture, fixture)
-    jar = Path(args.launcher).resolve().parent / "app" / "stablediffusion-nui.jar"
+    jar = Path(args.launcher).resolve().parent / "app" / "stable-diffusion-nui.jar"
     digest = hashlib.sha256(jar.read_bytes()).hexdigest()
     assert digest == args.jar_sha256, digest
     env = dict(os.environ, PYTHONPATH=str(Path(args.launcher).resolve().parent / "python"))

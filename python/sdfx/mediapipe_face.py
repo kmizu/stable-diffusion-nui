@@ -22,7 +22,13 @@ def verified_bytes(path):
 
 
 def model_path():
-    root = Path(os.environ.get("SDFX_MEDIAPIPE_DIR", Path.home() / ".cache" / "stablediffusion-nui" / "mediapipe"))
+    configured = os.environ.get("SDFX_MEDIAPIPE_DIR")
+    if configured:
+        root = Path(configured)
+    else:
+        primary = Path.home() / ".cache" / "stable-diffusion-nui" / "mediapipe"
+        legacy = Path.home() / ".cache" / "stablediffusion-nui" / "mediapipe"
+        root = legacy if not primary.exists() and legacy.exists() else primary
     path = root / "blaze_face_short_range_v1.tflite"
     if path.exists():
         verified_bytes(path)

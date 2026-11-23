@@ -7,7 +7,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $package = (Resolve-Path -LiteralPath $PackageRoot).Path
-$jar = Join-Path $package 'app/stablediffusion-nui.jar'
+$jar = Join-Path $package 'app/stable-diffusion-nui.jar'
 $modules = @(git -C $repo ls-files -- python/sdfx | Where-Object { $_ -match '\.py$' })
 if (-not ($modules -contains 'python/sdfx/token_downsampling.py')) { throw 'Stage the new module before packaging.' }
 foreach ($module in $modules) {

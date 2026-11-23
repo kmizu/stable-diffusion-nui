@@ -36,7 +36,7 @@ Use the command that matches how you installed SDNUI:
   the Python environment and model folders in that home first.
 - Source checkout: `run.bat --mcp`. The launcher prints nothing to stdout and starts `sdfx.mcp.McpMain` without
   initialising JavaFX.
-- Jar: `java -cp target/stablediffusion-nui.jar sdfx.mcp.McpMain --home <dir>`.
+- Jar: `java -cp target/stable-diffusion-nui.jar sdfx.mcp.McpMain --home <dir>`.
 
 Replace `C:/apps/SDNUI` with your installation folder.
 
@@ -88,27 +88,27 @@ address, which blocks web pages from calling it. When a token is set, every requ
 Headless, Windows package:
 
 ```sh
-claude mcp add stablediffusion-nui -- C:/apps/SDNUI/SDNUI.exe --mcp --home C:/apps/SDNUI
+claude mcp add stable-diffusion-nui -- C:/apps/SDNUI/SDNUI.exe --mcp --home C:/apps/SDNUI
 ```
 
 Headless, source checkout or jar:
 
 ```sh
-claude mcp add stablediffusion-nui -- C:/path/to/stablediffusion-nui/run.bat --mcp
-claude mcp add stablediffusion-nui -- java -cp C:/path/to/stablediffusion-nui/target/stablediffusion-nui.jar sdfx.mcp.McpMain --home C:/path/to/stablediffusion-nui
+claude mcp add stable-diffusion-nui -- C:/path/to/stable-diffusion-nui/run.bat --mcp
+claude mcp add stable-diffusion-nui -- java -cp C:/path/to/stable-diffusion-nui/target/stable-diffusion-nui.jar sdfx.mcp.McpMain --home C:/path/to/stable-diffusion-nui
 ```
 
 Try the tools without a GPU:
 
 ```sh
-claude mcp add stablediffusion-nui-dry -- C:/path/to/stablediffusion-nui/run.bat --mcp --dry-run
+claude mcp add stable-diffusion-nui-dry -- C:/path/to/stable-diffusion-nui/run.bat --mcp --dry-run
 ```
 
 The running GUI over HTTP, without and with a token:
 
 ```sh
-claude mcp add --transport http stablediffusion-nui-gui http://127.0.0.1:7861/mcp
-claude mcp add --transport http stablediffusion-nui-gui http://127.0.0.1:7861/mcp --header "Authorization: Bearer <token>"
+claude mcp add --transport http stable-diffusion-nui-gui http://127.0.0.1:7861/mcp
+claude mcp add --transport http stable-diffusion-nui-gui http://127.0.0.1:7861/mcp --header "Authorization: Bearer <token>"
 ```
 
 ### Project `.mcp.json`
@@ -119,7 +119,7 @@ change the installation path:
 ```json
 {
   "mcpServers": {
-    "stablediffusion-nui": {
+    "stable-diffusion-nui": {
       "command": "C:/apps/SDNUI/SDNUI.exe",
       "args": ["--mcp", "--home", "C:/apps/SDNUI"]
     }

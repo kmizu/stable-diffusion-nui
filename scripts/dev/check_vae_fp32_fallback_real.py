@@ -17,7 +17,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "python"))
-LOCK = Path("C:/Users/Mizushima/dev/stablediffusion-nui/outputs/.gpu.lock")
+LOCK = ROOT / "outputs" / ".gpu.lock"
 MODEL = Path("D:/stable-diffusion-webui-reForge/models/Stable-diffusion/waiIllustriousSDXL_v170.safetensors")
 
 

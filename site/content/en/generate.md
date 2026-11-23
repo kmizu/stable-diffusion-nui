@@ -120,7 +120,7 @@ The **img2img** tab makes a new image from an input image.
 **WD v3 batch (partial)** tags each image in a folder with WD v3 and then runs img2img on it. Support is partial.
 Configure the model and tag CSV on the **WD v3 (partial)** tab in Settings, then restart. It cannot be combined
 with scripts, extensions, LoRA or ControlNet. See the
-[Windows package notes](https://github.com/kmizu/stablediffusion-nui/blob/main/docs/WINDOWS_RELEASE.md#wd-v3-batch-interrogation-partial)
+[Windows package notes](https://github.com/kmizu/stable-diffusion-nui/blob/main/docs/WINDOWS_RELEASE.md#wd-v3-batch-interrogation-partial)
 for details.
 
 ## Inpaint

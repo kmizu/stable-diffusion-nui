@@ -27,7 +27,7 @@ MODELS = Path(os.environ.get("SDFX_MODEL_DIR", "D:/stable-diffusion-webui-reForg
 CHECKPOINTS = {"sd15": ("animekawa_v10.safetensors", 512, 512), "sdxl": ("waiIllustriousSDXL_v170.safetensors", 832, 1216)}
 PROMPT = "1girl, solo, silver hair, blue eyes, school uniform, cherry blossoms, detailed background, masterpiece, best quality"
 NEGATIVE = "lowres, bad anatomy, worst quality, blurry"
-LOCK = Path(os.environ.get("SDFX_GPU_LOCK", "C:/Users/Mizushima/dev/stablediffusion-nui/outputs/.gpu.lock"))
+LOCK = Path(os.environ.get("SDFX_GPU_LOCK", Path(__file__).resolve().parents[2] / "outputs" / ".gpu.lock"))
 
 
 def parse_value(text: str):

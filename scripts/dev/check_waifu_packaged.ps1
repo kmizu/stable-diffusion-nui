@@ -7,12 +7,12 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
-$jar = Join-Path $repoRoot 'target/stablediffusion-nui.jar'
+$jar = Join-Path $repoRoot 'target/stable-diffusion-nui.jar'
 $pythonRoot = Join-Path $repoRoot 'python'
 $java = 'C:/Program Files/Java/jdk-21/bin/java.exe'
 if ($PackageRoot) {
   $package = (Resolve-Path -LiteralPath $PackageRoot).Path
-  $jar = Join-Path $package 'app/stablediffusion-nui.jar'
+  $jar = Join-Path $package 'app/stable-diffusion-nui.jar'
   $pythonRoot = Join-Path $package 'python'
   $packagedJava = Join-Path $package 'runtime/bin/java.exe'
   if (Test-Path -LiteralPath $packagedJava) { $java = $packagedJava }

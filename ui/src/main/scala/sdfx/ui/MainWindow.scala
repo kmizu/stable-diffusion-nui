@@ -916,16 +916,22 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
               else scala.util.Try(Path.of(raw).toAbsolutePath.normalize()).toOption
             val envDirs = Seq("SDFX_AESTHETIC_EMBEDDINGS", "SDFX_MCP_ALLOWED_DIRS").flatMap(k =>
               Option(System.getenv(k)).toSeq.flatMap(_.split(java.io.File.pathSeparator)).flatMap(local))
-            val cache = Option(System.getenv("SDFX_AESTHETIC_GRADIENTS_CACHE")).flatMap(local)
-              .getOrElse(Path.of(System.getProperty("user.home"), ".cache", "stablediffusion-nui", "aesthetic_gradients"))
+            val cacheEnv = Option(System.getenv("SDFX_AESTHETIC_GRADIENTS_CACHE")).flatMap(local)
+            val cache = cacheEnv.getOrElse(Path.of(System.getProperty("user.home"), ".cache", "stable-diffusion-nui", "aesthetic_gradients"))
+            val legacyEmbDirs =
+              if cacheEnv.isEmpty then
+                val p = Path.of(System.getProperty("user.home"), ".cache", "stablediffusion-nui", "aesthetic_gradients", "embeddings")
+                if Files.isDirectory(p) then Seq(p) else Seq.empty
+              else Seq.empty
+            val cacheEmbDirs = Seq(cache.resolve("embeddings")) ++ legacyEmbDirs
             val index = services.home.configDir.resolve("aesthetic-embedding-directories.json")
             def localOnly(path: Path): Boolean = !sdfx.mcp.PathPolicy.isNetworkPath(path.toString)
             sdfx.core.aesthetic.AestheticEmbeddingDirectories.read(index, localOnly).flatMap { registered =>
-              val configured = (Seq(services.generator.outputsDir, cache.resolve("embeddings")) ++ envDirs ++ registered)
+              val configured = (Seq(services.generator.outputsDir) ++ cacheEmbDirs ++ envDirs ++ registered)
                 .map(_.toAbsolutePath.normalize())
               val roots = (configured ++ configured.flatMap(p => scala.util.Try(p.toRealPath()).toOption)).distinct
               def permitted(path: Path): Boolean = localOnly(path) && roots.exists(path.startsWith)
-              val dirs = Vector(services.generator.outputsDir.resolve("aesthetic_embeddings"), cache.resolve("embeddings")) ++ envDirs ++ registered
+              val dirs = Vector(services.generator.outputsDir.resolve("aesthetic_embeddings")) ++ cacheEmbDirs ++ envDirs ++ registered
               sdfx.core.aesthetic.AestheticEmbeddingLocator.resolve(name, fingerprint, dirs, permitted)
             }
           } { resolved =>

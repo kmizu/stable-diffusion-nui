@@ -33,7 +33,7 @@ object McpGen:
     val out = Path.of(req("out")).toAbsolutePath.normalize()
     val models = Path.of(o.getOrElse("models", "D:/stable-diffusion-webui-reForge/models"))
     val root = Path.of(o.getOrElse("root", ".")).toAbsolutePath.normalize()
-    val jar = o.getOrElse("jar", root.resolve("target/stablediffusion-nui.jar").toString)
+    val jar = o.getOrElse("jar", root.resolve("target/stable-diffusion-nui.jar").toString)
     val javaExe = o.getOrElse("java", sys.env.getOrElse("SDFX_SCALATORCH_JAVA", "java"))
     val home = out.resolve("app-home")
     Files.createDirectories(home.resolve("config")); Files.createDirectories(out.resolve("images"))

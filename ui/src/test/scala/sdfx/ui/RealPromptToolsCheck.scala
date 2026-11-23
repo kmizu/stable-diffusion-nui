@@ -109,8 +109,9 @@ object RealPromptToolsCheck:
         require(ps.forall(_.startsWith("1girl, ")) && ps.forall(_.split(",").length >= 2), ps.toString)
         ps.mkString(" || ")
       }
+      val modelDir = AppHome.detect().root.resolve("models/distilgpt2").toString
       val gp = run("sd15_gpt2", sd15, 512, 512, 10, "prompt_generator", "1girl, silver hair, upper body",
-        Map("method" -> "GPT-2 (model folder)", "model_dir" -> "C:/Users/Mizushima/dev/stablediffusion-nui/models/distilgpt2",
+        Map("method" -> "GPT-2 (model folder)", "model_dir" -> modelDir,
           "count" -> "2", "max_tokens" -> "16", "seed" -> "11"))
       check("gpt2") {
         require(gp.size == 2, s"images=${gp.size}")
@@ -120,7 +121,7 @@ object RealPromptToolsCheck:
         ps.mkString(" || ")
       }
       val ex = run("sd15_expand", sd15, 512, 512, 10, "prompt_expansion", "a girl in a garden",
-        Map("model_dir" -> "C:/Users/Mizushima/dev/stablediffusion-nui/models/distilgpt2", "max_tokens" -> "12"))
+        Map("model_dir" -> modelDir, "max_tokens" -> "12"))
       check("expansion") {
         require(ex.size == 1)
         val (_, f, text) = ex.head

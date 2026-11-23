@@ -101,7 +101,7 @@ PNG から復元したパラメーターなどに生成時に適用するスタ�
 2. **Resize mode** で、入力画像を出力サイズに合わせる方法を選びます。**Just resize**(そのまま拡大縮小)、**Crop and resize**(切り抜いて合わせる)、**Resize and fill**(収めて余白を埋める)があります。
 3. **Denoising** で変化の大きさを決めます。0 は入力画像のまま、1 は入力画像を無視します。
 
-**WD v3 batch (partial)** は、フォルダ内の画像ごとに WD v3 でタグを作ってから img2img を実行する部分対応の機能です。モデルとタグ CSV は Settings の **WD v3 (partial)** タブで設定し、再起動が必要です。スクリプト、拡張機能、LoRA、ControlNet とは併用できません。詳しくは [Windows 配布版の説明](https://github.com/kmizu/stablediffusion-nui/blob/main/docs/WINDOWS_RELEASE.md#wd-v3-batch-interrogation-partial)を参照してください。
+**WD v3 batch (partial)** は、フォルダ内の画像ごとに WD v3 でタグを作ってから img2img を実行する部分対応の機能です。モデルとタグ CSV は Settings の **WD v3 (partial)** タブで設定し、再起動が必要です。スクリプト、拡張機能、LoRA、ControlNet とは併用できません。詳しくは [Windows 配布版の説明](https://github.com/kmizu/stable-diffusion-nui/blob/main/docs/WINDOWS_RELEASE.md#wd-v3-batch-interrogation-partial)を参照してください。
 
 ## Inpaint
 

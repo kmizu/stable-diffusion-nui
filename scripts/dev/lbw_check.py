@@ -1,7 +1,8 @@
 import sys, io, os
+from pathlib import Path
 import numpy as np
 from PIL import Image
-sys.path.insert(0, r"D:\stable-diffusion-webui-reForge\stablediffusion-fx\python")
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "python"))
 from sdfx.engine import Engine
 from sdfx.protocol import Emitter, JobContext
 

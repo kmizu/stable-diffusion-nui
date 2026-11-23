@@ -49,4 +49,4 @@ A1111 コミュニティのパックは A1111 の言い回しを使うため、�
 
 ![併記表示(英語が先)](shots/localization-bilingual.png)
 
-詳細と計測値は [docs/localization-verification.md](https://github.com/kmizu/stablediffusion-nui/blob/main/docs/localization-verification.md) にあります。
+詳細と計測値は [docs/localization-verification.md](https://github.com/kmizu/stable-diffusion-nui/blob/main/docs/localization-verification.md) にあります。

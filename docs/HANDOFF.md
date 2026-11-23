@@ -1,4 +1,4 @@
-# Handoff: bundling the A1111 extension index into stablediffusion-nui
+# Handoff: bundling the A1111 extension index into stable-diffusion-nui
 
 Current checkpoint (2026-11-03): start with [HANDSOFF.md](../HANDSOFF.md). The previous v0.1 release is published; the next batch has 2/10 accepted issues (#26 and #6). Stop work after the next release is published and its downloaded artifact is verified. The older counts and checkpoints below are historical.
 

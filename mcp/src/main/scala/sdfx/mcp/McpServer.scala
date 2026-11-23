@@ -65,7 +65,7 @@ trait McpTool:
       "idempotentHint" -> idempotent, "openWorldHint" -> false)
     o
 
-final case class ServerInfo(name: String = "stablediffusion-nui", version: String = Version.app, instructions: String = McpServer.DefaultInstructions)
+final case class ServerInfo(name: String = "stable-diffusion-nui", version: String = Version.app, instructions: String = McpServer.DefaultInstructions)
 
 /** Transport-agnostic MCP server (one instance per client session).
   *

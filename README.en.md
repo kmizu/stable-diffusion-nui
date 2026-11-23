@@ -4,9 +4,9 @@
 
 Your local models, in a native UI. From image generation to batch preview, the gallery and ZIP export.
 
-Repository: [kmizu/stablediffusion-nui](https://github.com/kmizu/stablediffusion-nui). Formerly named Stable Diffusion FX / SDFX.
+Repository: [kmizu/stable-diffusion-nui](https://github.com/kmizu/stable-diffusion-nui). Formerly named Stable Diffusion FX / SDFX.
 
-**Manual: <https://kmizu.github.io/stablediffusion-nui/en/>** (Japanese: <https://kmizu.github.io/stablediffusion-nui/>)
+**Manual: <https://kmizu.github.io/stable-diffusion-nui/en/>** (Japanese: <https://kmizu.github.io/stable-diffusion-nui/>)
 
 ![The native SDNUI window. Prompt and generation settings on the left; the generated image, a 20-image gallery and a ZIP save button on the right.](docs/images/sdnui-desktop.png)
 
@@ -21,7 +21,7 @@ A desktop app for Stable Diffusion that runs locally.
 - UI: Scala 3 + JavaFX 21 (the `ui` module)
 - MCP server: lets AI agents call image generation (the `mcp` module)
 - Inference engine: Python + diffusers (`python/sdfx`). It is launched as a child process by the UI/MCP and communicates over stdin/stdout using JSON Lines
-- Build: sbt 2.0.12 + sbt-assembly (a single fat jar, `target/stablediffusion-nui.jar`)
+- Build: sbt 2.0.12 + sbt-assembly (a single fat jar, `target/stable-diffusion-nui.jar`)
 
 It is self-contained in this folder. It does not depend on the parent directory's reForge.
 
@@ -89,7 +89,7 @@ The older v0.01 / v0.02 releases keep the former name SDFX. For compatibility, t
 ## Quick start
 
 ```
-# 1. Build (produces target/stablediffusion-nui.jar)
+# 1. Build (produces target/stable-diffusion-nui.jar)
 scripts\build.bat          # Linux/macOS: scripts/build.sh   (it runs sbt -batch ui/assembly)
 
 # 2. Launch
@@ -221,11 +221,11 @@ Starts a dedicated engine without the GUI. `run.bat --mcp` launches `sdfx.mcp.Mc
 and writes only JSON-RPC to stdout (logs go to stderr).
 
 ```
-claude mcp add stablediffusion-nui -- D:/path/to/stablediffusion-nui/run.bat --mcp
+claude mcp add stable-diffusion-nui -- D:/path/to/stable-diffusion-nui/run.bat --mcp
 # Using the jar directly
-claude mcp add stablediffusion-nui -- java -cp D:/path/to/stablediffusion-nui/target/stablediffusion-nui.jar sdfx.mcp.McpMain --home D:/path/to/stablediffusion-nui
+claude mcp add stable-diffusion-nui -- java -cp D:/path/to/stable-diffusion-nui/target/stable-diffusion-nui.jar sdfx.mcp.McpMain --home D:/path/to/stable-diffusion-nui
 # Try it without a GPU
-claude mcp add stablediffusion-nui-dry -- D:/path/to/stablediffusion-nui/run.bat --mcp --dry-run
+claude mcp add stable-diffusion-nui-dry -- D:/path/to/stable-diffusion-nui/run.bat --mcp --dry-run
 ```
 
 If you write it in `.mcp.json`, see `.mcp.json.example`. Options of `McpMain`: `--home DIR`, `--dry-run`,
@@ -238,8 +238,8 @@ In Settings → MCP, enable **Enable MCP HTTP server** (default port 7861, token
 The endpoint is `http://127.0.0.1:7861/mcp` (127.0.0.1 only). Jobs go through the GUI queue, so they appear in the preview and gallery.
 
 ```
-claude mcp add --transport http stablediffusion-nui-gui http://127.0.0.1:7861/mcp
-claude mcp add --transport http stablediffusion-nui-gui http://127.0.0.1:7861/mcp --header "Authorization: Bearer <token>"
+claude mcp add --transport http stable-diffusion-nui-gui http://127.0.0.1:7861/mcp
+claude mcp add --transport http stable-diffusion-nui-gui http://127.0.0.1:7861/mcp --header "Authorization: Bearer <token>"
 ```
 
 On a shared machine, always set a token (without one, other processes on the same machine can generate, operate the queue and read images from allowed folders).
@@ -254,7 +254,7 @@ base64 / `data:` URIs can always be used.
 ## Architecture
 
 ```
- +------------------------ target/stablediffusion-nui.jar (sbt assembly) -------------------------+
+ +------------------------ target/stable-diffusion-nui.jar (sbt assembly) -------------------------+
  |                                                                                               |
  |   ui (Scala 3 + JavaFX 21)            mcp (stdio / Streamable HTTP, sdfx.mcp.McpMain)         |
  |     sdfx.ui.Launcher                    |                                                      |

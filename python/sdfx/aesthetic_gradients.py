@@ -21,7 +21,7 @@ Differences to the method / to the extension, all deliberate:
   SDXL's first text encoder derive from). The OpenAI CLIP code is MIT; the model card states no licence. It is not bundled:
   `config.json` and `model.safetensors` (1,710,540,580
   bytes) are downloaded on first use from a pinned revision into `SDFX_AESTHETIC_GRADIENTS_CACHE` (default
-  ~/.cache/stablediffusion-nui/aesthetic_gradients) and size/SHA-256 checked. The embedding creation needs the whole
+  ~/.cache/stable-diffusion-nui/aesthetic_gradients) and size/SHA-256 checked. The embedding creation needs the whole
   model; generation reads only the text projection (and, for SDXL, one layer and the final norm, see below) from it.
 * SD 1.x/2.x: the checkpoint's own text encoder is personalised. SDXL: only its first text encoder (CLIP ViT-L/14,
   the 768-dimensional half of the context) is personalised; the OpenCLIP-bigG half and the pooled embedding are
@@ -113,7 +113,11 @@ def normalize(config: dict) -> dict:
 # ------------------------------------------------------------------------------------------------ model files
 def cache_root() -> Path:
     configured = os.environ.get(CACHE_ENV)
-    return Path(configured) if configured else Path.home() / ".cache" / "stablediffusion-nui" / "aesthetic_gradients"
+    if configured:
+        return Path(configured)
+    primary = Path.home() / ".cache" / "stable-diffusion-nui" / "aesthetic_gradients"
+    legacy = Path.home() / ".cache" / "stablediffusion-nui" / "aesthetic_gradients"
+    return legacy if not primary.exists() and legacy.exists() else primary
 
 
 def embedding_dirs() -> list[Path]:

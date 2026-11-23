@@ -17,7 +17,7 @@ $ErrorActionPreference = 'Stop'
 if ($LoraTagOptions -and -not $Lora) { throw 'LoraTagOptions requires Lora.' }
 if ($Embedding -and (-not $Lora -or -not $LoraTagOptions)) { throw 'Embedding acceptance requires Lora and LoraTagOptions.' }
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
-$jar = Join-Path $repo 'target/stablediffusion-nui.jar'
+$jar = Join-Path $repo 'target/stable-diffusion-nui.jar'
 $classes = Join-Path $repo 'target/out/jvm/scala-3.3.6/sdfx-ui/test-classes'
 if (-not $LogDirectory) { $LogDirectory = "$OutputHome.logs" }
 if (Test-Path -LiteralPath $LogDirectory) { throw "Log directory already exists: $LogDirectory" }

@@ -216,6 +216,6 @@ def test_explicit_metadata_survives_real_dryrun_protocol_without_a_model(tmp_pat
         params['system_info_fields'] = ['version.app', 'platform.python', 'model.path']
         opted_in, _ = engine.call('txt2img', params)
         assert set(opted_in['result']['system_info']) == {'version.app', 'platform.python'}
-        assert opted_in['result']['system_info']['version.app'] == 'stablediffusion-fx'
+        assert opted_in['result']['system_info']['version.app'] == 'stable-diffusion-nui'
     finally:
         engine.close()

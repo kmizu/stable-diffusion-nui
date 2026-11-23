@@ -18,7 +18,7 @@ ViT-B/32 (OpenAI, the model behind sentence-transformers' `clip-ViT-B-32`). Vide
 OpenCV instead of ffmpeg key frames.
 
 Nothing is bundled: every model file is downloaded on first use from a pinned revision into `SDFX_CHARA_CACHE`
-(default ~/.cache/stablediffusion-nui/chara_searcher) and checked against a pinned size and SHA-256 before use.
+(default ~/.cache/stable-diffusion-nui/chara_searcher) and checked against a pinned size and SHA-256 before use.
 """
 from __future__ import annotations
 
@@ -93,7 +93,11 @@ class ModelUnavailable(nsfw_safety.ModelUnavailable):
 
 def cache_root() -> Path:
     configured = os.environ.get(CACHE_ENV)
-    return Path(configured) if configured else Path.home() / ".cache" / "stablediffusion-nui" / "chara_searcher"
+    if configured:
+        return Path(configured)
+    primary = Path.home() / ".cache" / "stable-diffusion-nui" / "chara_searcher"
+    legacy = Path.home() / ".cache" / "stablediffusion-nui" / "chara_searcher"
+    return legacy if not primary.exists() and legacy.exists() else primary
 
 
 def _fetch(repo: str, revision: str, asset: dict, progress=None) -> Path:

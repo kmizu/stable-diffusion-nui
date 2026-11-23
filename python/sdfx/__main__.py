@@ -24,7 +24,7 @@ def _reset_inherited_windows_dll_directory() -> None:
 
 
 def parse_args(argv=None):
-    ap = argparse.ArgumentParser(prog="sdfx", description="stablediffusion-fx inference engine (JSON Lines on stdin/stdout)")
+    ap = argparse.ArgumentParser(prog="sdfx", description="stable-diffusion-nui inference engine (JSON Lines on stdin/stdout)")
     ap.add_argument("--dry-run", action="store_true", help="fake engine: no torch/diffusers, writes placeholder images")
     ap.add_argument("--log-level", default=os.environ.get("SDFX_LOG_LEVEL", "INFO"),
                     choices=["DEBUG", "INFO", "WARNING", "ERROR", "debug", "info", "warning", "error"])

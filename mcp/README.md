@@ -56,13 +56,13 @@ The commands below show source-checkout and GUI HTTP alternatives. For another M
 
 ```sh
 # headless (stdio), via the launcher script
-claude mcp add stablediffusion-nui -- C:/path/to/stablediffusion-nui/run.bat --mcp
+claude mcp add stable-diffusion-nui -- C:/path/to/stable-diffusion-nui/run.bat --mcp
 # headless (stdio), using the jar directly
-claude mcp add stablediffusion-nui -- java -cp C:/path/to/stablediffusion-nui/target/stablediffusion-nui.jar sdfx.mcp.McpMain --home C:/path/to/stablediffusion-nui
+claude mcp add stable-diffusion-nui -- java -cp C:/path/to/stable-diffusion-nui/target/stable-diffusion-nui.jar sdfx.mcp.McpMain --home C:/path/to/stable-diffusion-nui
 # the running GUI (HTTP)
-claude mcp add --transport http stablediffusion-nui-gui http://127.0.0.1:7861/mcp
+claude mcp add --transport http stable-diffusion-nui-gui http://127.0.0.1:7861/mcp
 # ... with a token
-claude mcp add --transport http stablediffusion-nui-gui http://127.0.0.1:7861/mcp --header "Authorization: Bearer <token>"
+claude mcp add --transport http stable-diffusion-nui-gui http://127.0.0.1:7861/mcp --header "Authorization: Bearer <token>"
 ```
 
 Or copy `../.mcp.json.example` to `.mcp.json` in your project and adjust the paths.

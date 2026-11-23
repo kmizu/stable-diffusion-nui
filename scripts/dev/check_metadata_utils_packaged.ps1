@@ -11,7 +11,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $package = (Resolve-Path -LiteralPath $PackageRoot).Path
-$jar = Join-Path $package 'app/stablediffusion-nui.jar'
+$jar = Join-Path $package 'app/stable-diffusion-nui.jar'
 $modules = @(git -C $repo ls-files -- python/sdfx | Where-Object { $_ -match '\.py$' })
 if (-not ($modules -contains 'python/sdfx/metadata_utils.py')) { throw 'New module must be included in package input.' }
 foreach ($module in $modules) {
@@ -19,7 +19,7 @@ foreach ($module in $modules) {
       (Get-FileHash -LiteralPath (Join-Path $package $module)).Hash) { throw "Packaged module differs: $module" }
 }
 $before = (Get-FileHash -LiteralPath $jar -Algorithm SHA256).Hash
-if ($before -ne (Get-FileHash -LiteralPath (Join-Path $repo 'target/stablediffusion-nui.jar')).Hash) {
+if ($before -ne (Get-FileHash -LiteralPath (Join-Path $repo 'target/stable-diffusion-nui.jar')).Hash) {
   throw 'Extracted jar differs from fresh assembly.'
 }
 $env:PYTHONPATH = Join-Path $package 'python'

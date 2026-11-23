@@ -8,7 +8,7 @@ Each release can be downloaded from its GitHub release page. Every release bundl
 
 ## v0.1
 
-Published 2026-11-02. [GitHub release page](https://github.com/kmizu/stablediffusion-nui/releases/tag/v0.1)
+Published 2026-11-02. [GitHub release page](https://github.com/kmizu/stable-diffusion-nui/releases/tag/v0.1)
 
 The built-in Japanese language pack and [language guide](localization.html) are included. Translation is partial: 74.1% of distinct strings observed in the current UI. Panorama, compile, Prompt Tools, State Manager, tag completion and Corridor Crawler are partial implementations.
 
@@ -16,7 +16,7 @@ Extract **SDNUI-v0.1-windows-x64.zip** and run **SDNUI/SDNUI.exe**. SHA-256: `3e
 
 ## v0.06
 
-Published 2026-11-02. [GitHub release page](https://github.com/kmizu/stablediffusion-nui/releases/tag/v0.06)
+Published 2026-11-02. [GitHub release page](https://github.com/kmizu/stable-diffusion-nui/releases/tag/v0.06)
 
 ### Added
 
@@ -34,7 +34,7 @@ Download **SDNUI-v0.06-windows-x64.zip**, extract it, and run **SDNUI/SDNUI.exe*
 
 ## v0.05
 
-Published 2026-11-02. [GitHub release page](https://github.com/kmizu/stablediffusion-nui/releases/tag/v0.05)
+Published 2026-11-02. [GitHub release page](https://github.com/kmizu/stable-diffusion-nui/releases/tag/v0.05)
 
 Ten more extensions added since v0.04.
 
@@ -55,7 +55,7 @@ Download **SDNUI-v0.05-windows-x64.zip**, extract it, and run **SDNUI/SDNUI.exe*
 
 ## v0.04
 
-Published 2026-11-01. [GitHub release page](https://github.com/kmizu/stablediffusion-nui/releases/tag/v0.04)
+Published 2026-11-01. [GitHub release page](https://github.com/kmizu/stable-diffusion-nui/releases/tag/v0.04)
 
 Ten more issues resolved since v0.03, plus workflows for using the app from AI agents over MCP.
 
@@ -84,7 +84,7 @@ ZIP SHA-256: `b58c4a8dab854598f3e5072408ba24c37cf15996f8766d40ccc798ef62d38cb7`
 
 ## v0.03
 
-Published 2026-10-27. [GitHub release page](https://github.com/kmizu/stablediffusion-nui/releases/tag/v0.03)
+Published 2026-10-27. [GitHub release page](https://github.com/kmizu/stable-diffusion-nui/releases/tag/v0.03)
 
 Stable Diffusion FX was renamed **Stable Diffusion NUI**.
 
@@ -109,7 +109,7 @@ ZIP SHA-256: `75fca7e13167e0e5846d78904653bdc41710ebd04863a6c84fb82e577c5ea396`
 
 ## v0.02
 
-Published 2026-10-27. [GitHub release page](https://github.com/kmizu/stablediffusion-nui/releases/tag/v0.02)
+Published 2026-10-27. [GitHub release page](https://github.com/kmizu/stable-diffusion-nui/releases/tag/v0.02)
 
 ### Added and changed
 
@@ -131,7 +131,7 @@ ZIP SHA-256: `057d0128942fbeb8979d4379688094d8963dff218d41c0323d9507432ef59451`
 
 ## v0.01
 
-Published 2026-10-27. [GitHub release page](https://github.com/kmizu/stablediffusion-nui/releases/tag/v0.01)
+Published 2026-10-27. [GitHub release page](https://github.com/kmizu/stable-diffusion-nui/releases/tag/v0.01)
 
 The SDFX Windows preview.
 

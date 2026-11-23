@@ -79,8 +79,8 @@ lazy val ui = project
     run / javaOptions ++= Seq("-Dprism.allowhidpi=true", "-Xmx2g", "-Dfile.encoding=UTF-8"),
     Test / javaOptions ++= Seq("-Djava.awt.headless=true"),
     assembly / mainClass := Some("sdfx.ui.Launcher"),
-    assembly / assemblyJarName := "stablediffusion-nui.jar",
-    assembly / assemblyOutputPath := (ThisBuild / baseDirectory).value / "target" / "stablediffusion-nui.jar",
+    assembly / assemblyJarName := "stable-diffusion-nui.jar",
+    assembly / assemblyOutputPath := (ThisBuild / baseDirectory).value / "target" / "stable-diffusion-nui.jar",
     assembly / assemblyMergeStrategy := {
       case PathList("META-INF", "services", _*) => MergeStrategy.concat
       case PathList("META-INF", _*)              => MergeStrategy.discard
@@ -92,4 +92,4 @@ lazy val ui = project
 lazy val root = (project in file("."))
   .aggregate((Seq[ProjectReference](core, engine, scalaTorchEngine, plugins, mcp, ui) ++
     (if (nativeOnlyBuild) Seq.empty else Seq[ProjectReference](pythonEngine)) )*)
-  .settings(name := "stablediffusion-nui", publish / skip := true)
+  .settings(name := "stable-diffusion-nui", publish / skip := true)

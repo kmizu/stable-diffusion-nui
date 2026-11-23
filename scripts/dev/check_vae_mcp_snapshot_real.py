@@ -13,7 +13,7 @@ async def run(args, receipt):
     jar = args.jar.resolve()
     if args.launcher:
         launcher = args.launcher.resolve()
-        bundled = launcher.parent / "app" / "stablediffusion-nui.jar"
+        bundled = launcher.parent / "app" / "stable-diffusion-nui.jar"
         assert hashlib.sha256(jar.read_bytes()).digest() == hashlib.sha256(bundled.read_bytes()).digest()
     home = args.output.resolve() / "home"
     (home / "python" / "sdfx").mkdir(parents=True, exist_ok=True)

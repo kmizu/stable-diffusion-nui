@@ -2,7 +2,7 @@ package sdfx.core.config
 
 import java.nio.file.{Files, Path, Paths}
 
-/** The application root (`stablediffusion-nui/`). Everything the app owns lives below it. */
+/** The application root (`stable-diffusion-nui/`). Everything the app owns lives below it. */
 final case class AppHome(root: Path):
   def resolve(p: String): Path =
     val path = Paths.get(p)
@@ -30,6 +30,7 @@ object AppHome:
       Option(System.getProperty("sdfx.home")).map(Paths.get(_)),
       Option(System.getenv("SDFX_HOME")).map(Paths.get(_)),
       Some(Paths.get("").toAbsolutePath),
+      Some(Paths.get("").toAbsolutePath.resolve("stable-diffusion-nui")),
       Some(Paths.get("").toAbsolutePath.resolve("stablediffusion-nui")),
       Some(Paths.get("").toAbsolutePath.resolve("stablediffusion-fx")),
       jarDir.map(_.getParent),

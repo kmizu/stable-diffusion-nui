@@ -9,7 +9,7 @@
 
 Neither upstream repository has a licence, so nothing was copied: both are re-implemented from their observed
 behaviour. Neither model is bundled. Each is downloaded on first use from a pinned Hugging Face revision into
-`SDFX_NSFW_CHECKER_CACHE` (default ~/.cache/stablediffusion-nui/nsfw_checker) and every file is size and SHA-256
+`SDFX_NSFW_CHECKER_CACHE` (default ~/.cache/stable-diffusion-nui/nsfw_checker) and every file is size and SHA-256
 checked before it is loaded. Both run on the CPU (the safety checker upstream is never moved off the CPU either).
 
 `SDFX_NSFW_CHECKER_FORCE_FLAGGED` (comma list of `safety_checker`, `nsfwjs`) treats every classified image as
@@ -68,7 +68,11 @@ class ModelUnavailable(OSError):
 # ------------------------------------------------------------------------------------------------ downloads
 def cache_root() -> Path:
     configured = os.environ.get(CACHE_ENV)
-    return Path(configured) if configured else Path.home() / ".cache" / "stablediffusion-nui" / "nsfw_checker"
+    if configured:
+        return Path(configured)
+    primary = Path.home() / ".cache" / "stable-diffusion-nui" / "nsfw_checker"
+    legacy = Path.home() / ".cache" / "stablediffusion-nui" / "nsfw_checker"
+    return legacy if not primary.exists() and legacy.exists() else primary
 
 
 def model_dir(repo: str, revision: str, root=None) -> Path:

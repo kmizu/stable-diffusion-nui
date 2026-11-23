@@ -13,8 +13,8 @@ for rel in tracked:
             (matched := matched + 1) if h(cand) == h(repo / rel) else differ.append(rel); break
     else:
         missing.append(rel)
-jar = root / 'app' / 'stablediffusion-nui.jar'
+jar = root / 'app' / 'stable-diffusion-nui.jar'
 print({'matched': matched, 'missing': len(missing), 'differ': differ,
-       'jar_equal': h(jar) == h(repo / 'target/stablediffusion-nui.jar'), 'jar': h(jar)[:16],
+       'jar_equal': h(jar) == h(repo / 'target/stable-diffusion-nui.jar'), 'jar': h(jar)[:16],
        'exe': (root / 'SDNUI.exe').is_file(), 'notices': (root / 'THIRD_PARTY_NOTICES.md').is_file() and h(root / 'THIRD_PARTY_NOTICES.md') == h(repo / 'THIRD_PARTY_NOTICES.md')})
 print('missing sample:', missing[:8])

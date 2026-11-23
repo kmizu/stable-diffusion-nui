@@ -67,4 +67,4 @@ English unless a pack has a rule for the whole message.
 ![Bilingual layout, original first](shots/localization-bilingual.png)
 
 The details and the measurements are in
-[docs/localization-verification.md](https://github.com/kmizu/stablediffusion-nui/blob/main/docs/localization-verification.md).
+[docs/localization-verification.md](https://github.com/kmizu/stable-diffusion-nui/blob/main/docs/localization-verification.md).

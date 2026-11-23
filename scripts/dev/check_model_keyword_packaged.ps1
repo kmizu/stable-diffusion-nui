@@ -17,7 +17,7 @@ if ($LoraTagOptions -and -not $Lora) { throw 'LoraTagOptions requires Lora.' }
 if ($Embedding -and (-not $Lora -or -not $LoraTagOptions)) { throw 'Embedding acceptance requires Lora and LoraTagOptions.' }
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $package = (Resolve-Path -LiteralPath $PackageRoot).Path
-$jar = Join-Path $package 'app/stablediffusion-nui.jar'
+$jar = Join-Path $package 'app/stable-diffusion-nui.jar'
 $launcher = Join-Path $package 'SDNUI.exe'
 if (-not (Test-Path -LiteralPath $launcher -PathType Leaf)) { throw 'Extracted package launcher is missing.' }
 $modules = @(git -C $repo ls-files -- python/sdfx | Where-Object { $_ -match '\.py$' })
@@ -29,7 +29,7 @@ foreach ($module in $modules) {
   if ((Get-FileHash -LiteralPath (Join-Path $repo $module)).Hash -ne (Get-FileHash -LiteralPath (Join-Path $package $module)).Hash) { throw "Packaged module differs: $module" }
 }
 $before = (Get-FileHash -LiteralPath $jar -Algorithm SHA256).Hash
-if ($before -ne (Get-FileHash -LiteralPath (Join-Path $repo 'target/stablediffusion-nui.jar') -Algorithm SHA256).Hash) { throw 'Extracted jar differs from the fresh assembly.' }
+if ($before -ne (Get-FileHash -LiteralPath (Join-Path $repo 'target/stable-diffusion-nui.jar') -Algorithm SHA256).Hash) { throw 'Extracted jar differs from the fresh assembly.' }
 if (-not $LogDirectory) { $LogDirectory = "$OutputHome.logs" }
 if (Test-Path -LiteralPath $LogDirectory) { throw "Log directory already exists: $LogDirectory" }
 New-Item -ItemType Directory -Path $LogDirectory | Out-Null
@@ -72,7 +72,7 @@ function Run-PackagedHarness([string]$className, [string[]]$harnessArgs, [string
   $text = [Text.Encoding]::UTF8.GetString($configBytes)
   if (-not $text.Contains('app.mainclass=sdfx.ui.Launcher')) { throw 'Unexpected packaged main class.' }
   $text = $text.Replace('app.mainclass=sdfx.ui.Launcher', "app.mainclass=$className")
-  $text = $text.Replace('app.classpath=$APPDIR\stablediffusion-nui.jar', 'app.classpath=$APPDIR\stablediffusion-nui.jar;' + $classes)
+  $text = $text.Replace('app.classpath=$APPDIR\stable-diffusion-nui.jar', 'app.classpath=$APPDIR\stable-diffusion-nui.jar;' + $classes)
   [IO.File]::WriteAllText($config, $text, [Text.UTF8Encoding]::new($false))
   $quoted = @($harnessArgs | ForEach-Object { '"' + $_ + '"' })
   $process = Start-Process -FilePath $launcher -ArgumentList $quoted -PassThru -WindowStyle Hidden `

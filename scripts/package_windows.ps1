@@ -14,7 +14,7 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 $repo = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-if (-not $Jar) { $Jar = Join-Path $repo 'target/stablediffusion-nui.jar' }
+if (-not $Jar) { $Jar = Join-Path $repo 'target/stable-diffusion-nui.jar' }
 if (-not $OutputRoot) { $OutputRoot = Join-Path $PSScriptRoot "../dist/windows-v$Version" }
 if (-not $JdkHome) { throw 'Set JAVA_HOME or pass -JdkHome to a Windows x64 JDK 21 or 25.' }
 $jpackage = Join-Path ([IO.Path]::GetFullPath($JdkHome)) 'bin/jpackage.exe'
@@ -111,16 +111,16 @@ $inputDir = Join-Path $run 'input'
 $imageDest = Join-Path $run 'image'
 [IO.Directory]::CreateDirectory($inputDir) | Out-Null
 [IO.Directory]::CreateDirectory($imageDest) | Out-Null
-Copy-Item -LiteralPath $jarPath -Destination (Join-Path $inputDir 'stablediffusion-nui.jar')
+Copy-Item -LiteralPath $jarPath -Destination (Join-Path $inputDir 'stable-diffusion-nui.jar')
 
 $jpackageArgs = @('--type', 'app-image', '--name', 'SDNUI', '--description', 'Stable Diffusion NUI', '--app-version', $Version,
-    '--dest', $imageDest, '--input', $inputDir, '--main-jar', 'stablediffusion-nui.jar', '--main-class', 'sdfx.ui.Launcher',
+    '--dest', $imageDest, '--input', $inputDir, '--main-jar', 'stable-diffusion-nui.jar', '--main-class', 'sdfx.ui.Launcher',
     '--java-options', '-Dsdfx.home=$APPDIR\..', '--java-options', '-Dprism.allowhidpi=true', '--java-options', '-Xmx2g', '--java-options', '-Dfile.encoding=UTF-8')
 if ($PreferScalaTorch -or $NativeOnly) { $jpackageArgs += @('--java-options', '-Dsdfx.engine.backend=scala-torch') }
 & $jpackage @jpackageArgs
 if ($LASTEXITCODE -ne 0) { throw "jpackage failed (exit $LASTEXITCODE); staging retained at $run" }
 $image = Join-Path $imageDest 'SDNUI'
-foreach ($required in @('SDNUI.exe', 'app/stablediffusion-nui.jar', 'runtime/legal')) {
+foreach ($required in @('SDNUI.exe', 'app/stable-diffusion-nui.jar', 'runtime/legal')) {
     if (-not (Test-Path -LiteralPath (Join-Path $image $required))) { throw "Missing packaged component: $required" }
 }
 if ($workerDistribution) {

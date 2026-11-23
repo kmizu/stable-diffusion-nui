@@ -17,7 +17,7 @@ upscale, just before it is saved) and the `image_tool` request (tool `aesthetic_
 therefore also by its batch processing).
 
 Nothing is bundled: every model file is downloaded on first use from a pinned revision into `SDFX_AESTHETIC_CACHE`
-(default ~/.cache/stablediffusion-nui/aesthetic_score) and checked against a pinned size and SHA-256 before it is loaded
+(default ~/.cache/stable-diffusion-nui/aesthetic_score) and checked against a pinned size and SHA-256 before it is loaded
 (torch.load uses weights_only). CLIP and the classifiers stay in RAM and visit the GPU only while an image is scored.
 """
 from __future__ import annotations
@@ -158,7 +158,11 @@ def scorers(cfg: dict) -> list:
 # ------------------------------------------------------------------------------------------------ models
 def cache_root() -> Path:
     configured = os.environ.get(CACHE_ENV)
-    return Path(configured) if configured else Path.home() / ".cache" / "stablediffusion-nui" / "aesthetic_score"
+    if configured:
+        return Path(configured)
+    primary = Path.home() / ".cache" / "stable-diffusion-nui" / "aesthetic_score"
+    legacy = Path.home() / ".cache" / "stablediffusion-nui" / "aesthetic_score"
+    return legacy if not primary.exists() and legacy.exists() else primary
 
 
 def _fetch(repo: str, revision: str, asset: dict, progress=None, github: bool = False) -> Path:

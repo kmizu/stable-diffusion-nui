@@ -7,7 +7,7 @@ plugin, with licence notices), progress, the next task, environment paths and ve
 
 ## Project
 
-Stable Diffusion NUI (`stablediffusion-nui`, formerly Stable Diffusion FX / SDFX) is a standalone Stable Diffusion app with four parts:
+Stable Diffusion NUI (`stable-diffusion-nui`, formerly `stablediffusion-nui` and Stable Diffusion FX / SDFX) is a standalone Stable Diffusion app with four parts:
 
 - `core/`, `engine/`, `mcp/`, `plugins/`, `ui/`: the Scala 3 + JavaFX client, built with sbt.
 - `python/sdfx/`: the diffusers engine. The client starts it as `python -m sdfx` and talks JSON Lines over stdio
@@ -18,13 +18,13 @@ Stable Diffusion NUI (`stablediffusion-nui`, formerly Stable Diffusion FX / SDFX
 The parent directory (reForge) is reference material only. Never import or launch it.
 
 The Windows package uses `SDNUI/SDNUI.exe`; the v0.03 ZIP is `SDNUI-v0.03-windows-x64.zip`.
-Keep internal `sdfx` packages, `SDFX_*` environment variables and existing settings compatible.
+Keep internal `sdfx` packages, `SDFX_*` environment variables, legacy `stablediffusion-nui` fallbacks and existing settings compatible.
 Historical release names and verification paths retain their original spelling.
 
 ## Commands
 
 - Scala tests: `%LOCALAPPDATA%\Coursier\data\bin\sbt.bat -batch test`
-- Fat jar: `sbt.bat -batch ui/assembly`, which writes `target/stablediffusion-nui.jar` (run it with Java 21).
+- Fat jar: `sbt.bat -batch ui/assembly`, which writes `target/stable-diffusion-nui.jar` (run it with Java 21).
 - Python tests:
   - `python/.venv-smoke/Scripts/python.exe -m pytest` (GPU venv, torch).
   - `python/.venv-test/Scripts/python.exe -m pytest` (no torch).
@@ -41,5 +41,5 @@ Historical release names and verification paths retain their original spelling.
 - **Verification**: GPU-check new features on real SD1.5 and SDXL models, and look at the images before marking a
   target done.
 - **Line endings**: write files with LF (`.gitattributes`).
-- **Commits**: one commit per wave, saying what was added and how it was verified. Push to `main` of the private
-  repo `kmizu/stablediffusion-nui`.
+- **Commits**: one commit per wave, saying what was added and how it was verified. Push to `main` of
+  repo `kmizu/stable-diffusion-nui`.

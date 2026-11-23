@@ -59,7 +59,7 @@ class ClipIoPlugin extends HookPlugin:
   override def description =
     "Clip Output writes the CLIP conditioning of the prompts to CSV / PT files for investigation. Clip Input skips CLIP: " +
     "the Positive / Negative prompt boxes name conditioning files (and CLIP-encoded pieces) that are concatenated and " +
-    "sent to the sampler. Files are in the folder $SDFX_CLIP_IO_DIR, by default ~/.cache/stablediffusion-nui/clip_io/conditioning."
+    "sent to the sampler. Files are in the folder $SDFX_CLIP_IO_DIR, by default ~/.cache/stable-diffusion-nui/clip_io/conditioning."
 
   override def controls: Seq[Control] = Seq(
     Check("enabled", "Enabled"),

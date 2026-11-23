@@ -10,7 +10,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $package = (Resolve-Path -LiteralPath $PackageRoot).Path
-$jar = Join-Path $package 'app/stablediffusion-nui.jar'
+$jar = Join-Path $package 'app/stable-diffusion-nui.jar'
 $modules = @(git -C $repo ls-files -- python/sdfx | Where-Object { $_ -match '\.py$' })
 if (-not ($modules -contains 'python/sdfx/img2img_hires_fix.py')) { throw 'Add new runtime module to the index before packaging.' }
 foreach ($module in $modules) {
@@ -18,7 +18,7 @@ foreach ($module in $modules) {
       (Get-FileHash -LiteralPath (Join-Path $package $module)).Hash) { throw "Packaged module differs: $module" }
 }
 $before = (Get-FileHash -LiteralPath $jar -Algorithm SHA256).Hash
-if ($before -ne (Get-FileHash -LiteralPath (Join-Path $repo 'target/stablediffusion-nui.jar') -Algorithm SHA256).Hash) {
+if ($before -ne (Get-FileHash -LiteralPath (Join-Path $repo 'target/stable-diffusion-nui.jar') -Algorithm SHA256).Hash) {
   throw 'Extracted jar differs from the fresh assembly.'
 }
 $env:PYTHONPATH = Join-Path $package 'python'

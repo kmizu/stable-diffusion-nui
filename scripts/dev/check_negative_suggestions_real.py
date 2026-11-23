@@ -15,7 +15,7 @@ NEGATIVE = "low quality, worst quality, blurry, jpeg artifacts"
 async def run(args, receipt):
     launcher = args.launcher.resolve()
     jar = args.jar.resolve()
-    bundled = launcher.parent / "app" / "stablediffusion-nui.jar"
+    bundled = launcher.parent / "app" / "stable-diffusion-nui.jar"
     assert hashlib.sha256(jar.read_bytes()).digest() == hashlib.sha256(bundled.read_bytes()).digest()
     home = args.output.resolve() / "home"
     (home / "python" / "sdfx").mkdir(parents=True, exist_ok=True)

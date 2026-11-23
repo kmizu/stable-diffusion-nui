@@ -5,7 +5,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
-$packagedJar = Join-Path $repoRoot 'target/stablediffusion-nui.jar'
+$packagedJar = Join-Path $repoRoot 'target/stable-diffusion-nui.jar'
 $javaExe = 'C:/Program Files/Java/jdk-21/bin/java.exe'
 $pythonExe = Join-Path $repoRoot 'python/.venv-smoke/Scripts/python.exe'
 $env:PYTHONPATH = Join-Path $repoRoot 'python'

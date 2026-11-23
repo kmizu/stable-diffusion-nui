@@ -114,7 +114,7 @@ trait BooruTransport:
 object BooruTransport:
   val MaxText = 8 * 1024 * 1024
   val MaxImage = 25 * 1024 * 1024
-  val UserAgent = "StableDiffusionNUI/0.06 (booru_prompt; +https://github.com/kmizu/stablediffusion-nui)"
+  val UserAgent = "StableDiffusionNUI/0.06 (booru_prompt; +https://github.com/kmizu/stable-diffusion-nui)"
 
 /** JDK HTTP client with timeouts, a body cap and a single retry for 429 / 503. Errors never include the query
   * string, because it can hold API keys.

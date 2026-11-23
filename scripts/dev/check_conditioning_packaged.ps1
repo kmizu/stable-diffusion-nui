@@ -9,7 +9,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $package = (Resolve-Path -LiteralPath $PackageRoot).Path
-$jar = Join-Path $package 'app/stablediffusion-nui.jar'
+$jar = Join-Path $package 'app/stable-diffusion-nui.jar'
 $launcher = Join-Path $package 'SDNUI.exe'
 if (-not (Test-Path -LiteralPath $launcher)) { throw 'Extracted application launcher is missing.' }
 $modules = @(git -C $repo ls-files -- python/sdfx | Where-Object { $_ -match '\.py$' })
@@ -22,7 +22,7 @@ foreach ($module in $modules) {
       (Get-FileHash -LiteralPath (Join-Path $package $module) -Algorithm SHA256).Hash) { throw "Packaged module differs: $module" }
 }
 $before = (Get-FileHash -LiteralPath $jar -Algorithm SHA256).Hash
-if ($before -ne (Get-FileHash -LiteralPath (Join-Path $repo 'target/stablediffusion-nui.jar') -Algorithm SHA256).Hash) {
+if ($before -ne (Get-FileHash -LiteralPath (Join-Path $repo 'target/stable-diffusion-nui.jar') -Algorithm SHA256).Hash) {
   throw 'Extracted jar differs from fresh assembly.'
 }
 $output = [IO.Path]::GetFullPath($OutputHome)
@@ -38,7 +38,7 @@ try {
   $text = [Text.Encoding]::UTF8.GetString($configBytes)
   if (-not $text.Contains('app.mainclass=sdfx.ui.Launcher')) { throw 'Unexpected packaged main class.' }
   $text = $text.Replace('app.mainclass=sdfx.ui.Launcher', 'app.mainclass=sdfx.ui.RealConditioningHighresCheck')
-  $text = $text.Replace('app.classpath=$APPDIR\stablediffusion-nui.jar', 'app.classpath=$APPDIR\stablediffusion-nui.jar;' + $classes)
+  $text = $text.Replace('app.classpath=$APPDIR\stable-diffusion-nui.jar', 'app.classpath=$APPDIR\stable-diffusion-nui.jar;' + $classes)
   [IO.File]::WriteAllText($config, $text, [Text.UTF8Encoding]::new($false))
   $arguments = @($Python, $Checkpoint, $Photo, $output) |
     ForEach-Object { '"' + $_ + '"' }

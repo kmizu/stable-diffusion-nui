@@ -155,7 +155,7 @@ def snapshot(engine, full=False):
     if not full:
         return result
     root = Path(__file__).resolve().parents[2]
-    result.update(version=dict(app='stablediffusion-fx', engine=ENGINE_VERSION,
+    result.update(version=dict(app='stable-diffusion-nui', engine=ENGINE_VERSION,
                                hash=_command(['git', 'rev-parse', 'HEAD'], root),
                                tag=_command(['git', 'describe', '--exact-match', '--tags'], root),
                                tags=_command(['git', 'tag', '--points-at', 'HEAD'], root),

@@ -240,7 +240,7 @@ async def run(args, receipt):
     receipt["jar_sha256"] = sha256(args.jar)
     receipt["outputs"] = {}
     await run_phase(args, receipt, "normal", {})
-    cache = args.cache or Path.home() / ".cache" / "stablediffusion-nui" / "nsfw_checker"
+    cache = args.cache or Path.home() / ".cache" / "stable-diffusion-nui" / "nsfw_checker"
     receipt["model_sha256"] = model_hashes(cache)
     await run_phase(args, receipt, "forced", {"SDFX_NSFW_CHECKER_FORCE_FLAGGED": "safety_checker,nsfwjs"})
     receipt["success"] = True

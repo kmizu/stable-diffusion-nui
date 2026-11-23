@@ -22,7 +22,7 @@ async def run(args):
                 "vram_mode": "sequential_offload" if args.sdxl else "model_offload", "dtype": "fp16"}
     (home / "config" / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
     if args.launcher:
-        packaged = Path(args.launcher).resolve().parent / "app" / "stablediffusion-nui.jar"
+        packaged = Path(args.launcher).resolve().parent / "app" / "stable-diffusion-nui.jar"
         assert hashlib.sha256(packaged.read_bytes()).digest() == hashlib.sha256(Path(args.jar).read_bytes()).digest()
         command = [str(Path(args.launcher).resolve()), "--mcp", "--home", str(home)]
     else:

@@ -4,7 +4,7 @@ These instructions describe the v0.1 package. Earlier
 v0.01 / v0.02 assets retain their original names (for example,
 `SDFX-v0.02-windows-x64.zip` and `SDFX/SDFX.exe`). Internal Python/Scala `sdfx`
 names, `SDFX_HOME`, `SDFX_MCP_*` and existing configuration files remain compatible.
-See the [repository releases](https://github.com/kmizu/stablediffusion-nui/releases)
+See the [repository releases](https://github.com/kmizu/stable-diffusion-nui/releases)
 for the assets actually published; the checks below do not assert publication.
 
 ## Use
@@ -20,7 +20,7 @@ The Windows packager can include a relocatable scala-torch worker and a separate
 ```powershell
 pwsh scripts/package_windows.ps1 `
   -JdkHome 'C:/path/to/jdk-21' `
-  -Jar target/stablediffusion-nui.jar `
+  -Jar target/stable-diffusion-nui.jar `
   -Version 0.1 `
   -ScalaTorchWorkerDistribution 'C:/path/to/scala-torch/target/out/jvm/scala-3.3.8/scala-torch-models/worker-distribution' `
   -ScalaTorchJdkHome 'C:/path/to/jdk-25' `
@@ -49,7 +49,7 @@ try {
 }
 pwsh scripts/package_windows.ps1 `
   -JdkHome 'C:/path/to/jdk-21' `
-  -Jar target/stablediffusion-nui.jar `
+  -Jar target/stable-diffusion-nui.jar `
   -Version 0.1 `
   -ScalaTorchWorkerDistribution 'C:/path/to/scala-torch/target/out/jvm/scala-3.3.8/scala-torch-models/worker-distribution' `
   -ScalaTorchJdkHome 'C:/path/to/jdk-25' `
@@ -65,14 +65,14 @@ To use existing Civitai downloads, place the model files in the corresponding `m
 `LICENSE`, `THIRD_PARTY_NOTICES.md`, `DISTRIBUTION_NOTICES.md` and the referenced `licenses/*.txt` cover the app and listed dependencies; the bundled runtime's own notices are in `runtime/legal`. This is a portable app-image, not an installer; deleting its extracted folder removes its local data as well.
 
 
-The full user manual (Japanese and English) is at <https://kmizu.github.io/stablediffusion-nui/en/>.
+The full user manual (Japanese and English) is at <https://kmizu.github.io/stable-diffusion-nui/en/>.
 
 ## Use from AI agents (MCP)
 
 `SDNUI.exe --mcp` starts a headless MCP server over stdio with the bundled Java runtime, without opening the window. For the regular package, set up Python and model folders first (in the GUI or in `<home>/config/settings.json`). The native-only package needs only its scala-torch model settings. Then register it with your MCP client, for example:
 
 ```powershell
-claude mcp add stablediffusion-nui -- C:/apps/SDNUI/SDNUI.exe --mcp --home C:/apps/SDNUI
+claude mcp add stable-diffusion-nui -- C:/apps/SDNUI/SDNUI.exe --mcp --home C:/apps/SDNUI
 ```
 
 `.mcp.json.example` shows the same connection for `.mcp.json`. Add `--dry-run` to try it without a GPU, or `--http [PORT]` to serve Streamable HTTP instead of stdio. To let agents drive the running GUI instead, enable Settings → MCP → **Enable MCP HTTP server** and connect to `http://127.0.0.1:7861/mcp`. Tools, options and limits: `mcp/README.md` and the manual's MCP page.
@@ -104,10 +104,10 @@ The configured status confirms the files and dependencies passed startup checks;
 Build on Windows x64 with Git, PowerShell and a Windows x64 JDK 21 or 25. First assemble the final, verified Windows JavaFX fat JAR from the intended source revision (`sbt -batch ui/assembly`); packaging does not build or download anything. Then, from any working directory:
 
 ```powershell
-& 'path\to\stablediffusion-nui\scripts\package_windows.ps1' -Version '0.1' -JdkHome 'C:\Program Files\Java\jdk-21' -Jar 'path\to\stablediffusion-nui\target\stablediffusion-nui.jar' -OutputRoot 'path\to\release-output'
+& 'path\to\stable-diffusion-nui\scripts\package_windows.ps1' -Version '0.1' -JdkHome 'C:\Program Files\Java\jdk-21' -Jar 'path\to\stable-diffusion-nui\target\stable-diffusion-nui.jar' -OutputRoot 'path\to\release-output'
 ```
 
-`-Version` accepts two or three numeric components of one to three digits each; `-JdkHome` defaults to `JAVA_HOME`; `-Jar` defaults to this checkout's `target/stablediffusion-nui.jar`; `-OutputRoot` defaults to `dist/windows-v<Version>` in this checkout. Paths with spaces are supported. Each invocation creates a fresh `build-<UUID>` directory inside the output root and retains its staging files. Its versioned ZIP and `SHA256SUMS.txt` are the release assets. Tracked Python source and selected data files, model README skeletons, the pinned NudeNet detector and tracked `licenses/*.txt` files are copied, along with the requirement files and app and JVM distribution notices; no image-generation checkpoints, venv, settings or outputs are copied. Review the source checkout and JAR before packaging; this script does not verify their provenance.
+`-Version` accepts two or three numeric components of one to three digits each; `-JdkHome` defaults to `JAVA_HOME`; `-Jar` defaults to this checkout's `target/stable-diffusion-nui.jar`; `-OutputRoot` defaults to `dist/windows-v<Version>` in this checkout. Paths with spaces are supported. Each invocation creates a fresh `build-<UUID>` directory inside the output root and retains its staging files. Its versioned ZIP and `SHA256SUMS.txt` are the release assets. Tracked Python source and selected data files, model README skeletons, the pinned NudeNet detector and tracked `licenses/*.txt` files are copied, along with the requirement files and app and JVM distribution notices; no image-generation checkpoints, venv, settings or outputs are copied. Review the source checkout and JAR before packaging; this script does not verify their provenance.
 
 jpackage creates a classpath app-image and its default linked runtime; the release tag and ZIP use `v0.1`. Passing `-Version` changes the jpackage version, output directory default and ZIP name; it does not modify the Git tag. Refer to [Oracle's JDK 21 packaging overview](https://docs.oracle.com/en/java/javase/21/jpackage/packaging-overview.html). This script does not sign binaries or publish a release.
 
