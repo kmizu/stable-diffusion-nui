@@ -143,6 +143,7 @@ final class ModelBrowser(ctx: UiContext, actions: ModelCardActions, catalog: Mod
   private val loaderLease = PreviewImageLoader.acquire()
   private val loader = loaderLease.loader
   private val stage = new Stage()
+  AppIcon.apply(stage)
   stage.initOwner(ctx.stage)
   stage.setTitle("Models and networks")
   stage.setMinWidth(640); stage.setMinHeight(420)

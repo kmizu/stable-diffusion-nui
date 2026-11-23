@@ -166,11 +166,13 @@ final class TopBar(
 
   private val title = W.label("SDNUI", "app-title")
   title.setMinWidth(Region.USE_PREF_SIZE)
+  private val brand = W.hbox(8, AppIcon.emblem(22), title)
+  brand.setMinWidth(Region.USE_PREF_SIZE)
 
   val node: HBox =
     val h = new HBox(
       8,
-      title,
+      brand,
       sep(),
       W.label("Checkpoint", "bar-label"),
       ckptBtn,

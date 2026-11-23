@@ -19,6 +19,7 @@ final class BootstrapDialog(home: AppHome, settings: Settings, stylesheets: Seq[
 
   def show(done: Result => Unit): Unit =
     val stage = new Stage()
+    AppIcon.apply(stage)
     stage.setTitle("SDNUI — first start")
     var finished = false
     def finish(r: Result): Unit =

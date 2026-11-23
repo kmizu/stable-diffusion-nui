@@ -443,6 +443,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
           thunk => Fx.run(thunk()), true)
         generationStatesPane = new NamedGenerationStatesPane(ctx, generationStatesSession, fields, controllers, generationHistory)
         generationStatesStage = new Stage()
+        AppIcon.apply(generationStatesStage)
         generationStatesStage.initOwner(stage)
         generationStatesStage.setTitle("Named generation states")
         generationStatesStage.setMinWidth(760)
@@ -474,6 +475,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
           thunk => Fx.run(thunk()), opts.configPresetsDir.isEmpty)
         presetPane = new NativePresetsPane(ctx, presetSession, controllers, presetFileDialogs)
         presetStage = new Stage()
+        AppIcon.apply(presetStage)
         presetStage.initOwner(stage)
         presetStage.setTitle("Native presets")
         presetStage.setMinWidth(700)
@@ -495,6 +497,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
       if payloadPane == null then
         payloadPane = new RequestPayloadPane(ctx, payloadClipboardWriter)
         payloadStage = new Stage()
+        AppIcon.apply(payloadStage)
         payloadStage.initOwner(stage)
         payloadStage.setTitle("API payload inspector")
         payloadStage.setMinWidth(720)
@@ -1181,6 +1184,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
 
   // ---- window state ------------------------------------------------------------------------------------
   def show(): Unit =
+    AppIcon.apply(stage)
     stage.setTitle(s"Stable Diffusion NUI${if services.dryRun then " (dry run)" else ""}")
     stage.setScene(scene)
     stage.setMinWidth(1280)

@@ -266,7 +266,9 @@ final class SettingsDialog(owner: Stage, initial: Settings, initialTab: Int = 0,
     d.getDialogPane.getStyleClass.add("settings-dialog")
     d.setResizable(true)
     d.setOnShown(_ => Option(d.getDialogPane.getScene).flatMap(s => Option(s.getWindow)).collect {
-      case st: Stage => NativeWindowChrome.apply(st, initial.theme)
+      case st: Stage =>
+        AppIcon.apply(st)
+        NativeWindowChrome.apply(st, initial.theme)
     })
     val r = d.showAndWait()
     if r.isPresent && r.get == ButtonType.OK then

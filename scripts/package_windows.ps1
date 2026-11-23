@@ -113,8 +113,11 @@ $imageDest = Join-Path $run 'image'
 [IO.Directory]::CreateDirectory($imageDest) | Out-Null
 Copy-Item -LiteralPath $jarPath -Destination (Join-Path $inputDir 'stable-diffusion-nui.jar')
 
+$iconPath = Join-Path $repo 'ui/src/main/resources/sdfx/ui/icons/sdnui.ico'
+if (-not (Test-Path -LiteralPath $iconPath -PathType Leaf)) { throw "Application icon missing: $iconPath" }
+
 $jpackageArgs = @('--type', 'app-image', '--name', 'SDNUI', '--description', 'Stable Diffusion NUI', '--app-version', $Version,
-    '--dest', $imageDest, '--input', $inputDir, '--main-jar', 'stable-diffusion-nui.jar', '--main-class', 'sdfx.ui.Launcher',
+    '--icon', $iconPath, '--dest', $imageDest, '--input', $inputDir, '--main-jar', 'stable-diffusion-nui.jar', '--main-class', 'sdfx.ui.Launcher',
     '--java-options', '-Dsdfx.home=$APPDIR\..', '--java-options', '-Dprism.allowhidpi=true', '--java-options', '-Xmx2g', '--java-options', '-Dfile.encoding=UTF-8',
     '--java-options', '--enable-native-access=ALL-UNNAMED')
 if ($PreferScalaTorch -or $NativeOnly) { $jpackageArgs += @('--java-options', '-Dsdfx.engine.backend=scala-torch') }
