@@ -93,7 +93,8 @@ final class AppServices(
 
   val supervisor: EngineSupervisor = new EngineSupervisor(
     launchOverride.getOrElse(() => EngineBackend.launch(home,_settings,dryRun)),
-    log
+    log,
+    extraFeatures = () => if NativeNsfwCensor.available(home) then Seq("nsfw_checker") else Nil
   )
   val client: EngineClient = new EngineClient(supervisor)
   lazy val promptTools = new sdfx.core.prompttools.PromptToolsService(home.configDir.resolve("prompt-tools"))

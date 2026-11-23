@@ -34,7 +34,11 @@ lazy val commonSettings = Seq(
 
 lazy val core = project.settings(commonSettings, name := "sdfx-core", Test / javaOptions ++= Seq("-Djava.awt.headless=true", "-Dfile.encoding=UTF-8"))
 
-lazy val engine = project.dependsOn(core).settings(commonSettings, name := "sdfx-engine")
+lazy val engine = project.dependsOn(core).settings(
+  commonSettings,
+  name := "sdfx-engine",
+  libraryDependencies += "com.microsoft.onnxruntime" % "onnxruntime" % "1.20.0"
+)
 
 lazy val pythonEngine = project.dependsOn(engine).settings(commonSettings, name := "sdfx-python-engine")
 

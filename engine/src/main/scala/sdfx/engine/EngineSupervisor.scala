@@ -39,7 +39,8 @@ final class EngineSupervisor(
     shutdownGrace: FiniteDuration = 5.seconds,
     loadInterruptGrace: FiniteDuration = 60.seconds,
     startTimeout: FiniteDuration = 45.minutes,
-    reloadTimeout: FiniteDuration = 30.minutes
+    reloadTimeout: FiniteDuration = 30.minutes,
+    extraFeatures: () => Seq[String] = () => Nil
 ):
   import EngineProcess.*
 
@@ -75,6 +76,10 @@ final class EngineSupervisor(
     val t = new Thread(r, name)
     t.setDaemon(true)
     t
+
+  private def augmentHello(h: EngineHello): EngineHello =
+    val extra = try extraFeatures().filterNot(h.features.contains) catch case NonFatal(_) => Nil
+    if extra.isEmpty then h else h.copy(features = h.features ++ extra)
 
   def state: EngineState = _state
   def hello: Option[EngineHello] = _hello
@@ -120,7 +125,7 @@ final class EngineSupervisor(
     ensureStarted()
 
   private def awaitStarted(f: Future[EngineProcess]): EngineHello =
-    try Await.result(f, startTimeout).hello
+    try augmentHello(Await.result(f, startTimeout).hello)
     catch
       case _: java.util.concurrent.TimeoutException =>
         throw EngineError(EngineTimeout, s"engine did not become ready within $startTimeout")
@@ -187,17 +192,18 @@ final class EngineSupervisor(
     log(s"[sdfx] starting engine: ${l.command.mkString(" ")} (cwd ${l.workDir})")
     lazy val ep: EngineProcess = EngineProcess.start(l, log, (code, expected) => onProcessExit(ep, code, expected))
     val p = ep
+    val hello = augmentHello(p.hello)
     val keep = lock.synchronized {
       if !live then false
       else
         proc = Some(p)
-        _hello = Some(p.hello)
+        _hello = Some(hello)
         true
     }
     if !keep then
       p.close(shutdownGrace)
       throw EngineError(EngineNotRunning, "engine was stopped while starting")
-    log(s"[sdfx] engine ready: ${p.hello.engineVersion} device=${p.hello.device} dryRun=${p.hello.dryRun}")
+    log(s"[sdfx] engine ready: ${hello.engineVersion} device=${hello.device} dryRun=${hello.dryRun}")
     // Re-issue the last model (and VAE) so a restart is transparent to the user.
     // Policy: a reload that *times out* means the engine is wedged -> kill it and fail the start (state Crashed).
     // A reload that *fails* (e.g. checkpoint deleted) -> engine is usable: Ready, with loadedModel / remembered model cleared.
@@ -231,7 +237,7 @@ final class EngineSupervisor(
       reload(Protocol.Types.SetVae, params, r => Try(Json.fromJs[LoadedModel](r)).toOption.foreach(m => _loaded = Some(m)))
     }
     if !p.isAlive then throw EngineError(EngineCrashed, "engine died while reloading the model", p.stderrLines.takeRight(20).mkString("\n"))
-    val ready = EngineState.Ready(p.hello)
+    val ready = EngineState.Ready(augmentHello(p.hello))
     val published = lock.synchronized {
       if live && proc.contains(p) then
         val changed = _state != ready
@@ -395,7 +401,7 @@ final class EngineSupervisor(
     val next = lock.synchronized {
       // Completions of a process that is no longer current must not disturb the new process' counter.
       if proc.contains(p) then inflight = math.max(0, inflight + delta)
-      (inflight, proc.filter(_.isAlive).map(_.hello))
+      (inflight, proc.filter(_.isAlive).map(x => augmentHello(x.hello)))
     }
     next match
       case (n, Some(_)) if n > 0 && _state != EngineState.Busy => setState(EngineState.Busy)
@@ -481,7 +487,7 @@ final class EngineSupervisor(
           try Await.ready(o.exitFuture, 5.seconds)
           catch case NonFatal(_) => ()
         )
-      }.flatMap(_ => ensureStarted()).map(_.hello)
+      }.flatMap(_ => ensureStarted()).map(p => augmentHello(p.hello))
 
   /** Stop only the process captured for an owned request; stale timeouts cannot kill replacements. */
   private[engine] def processSnapshot: Option[EngineProcess] = lock.synchronized(proc.filter(_.isAlive))

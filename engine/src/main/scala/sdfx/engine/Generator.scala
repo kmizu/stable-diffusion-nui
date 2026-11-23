@@ -695,10 +695,71 @@ final class Generator(
       runEnginePrepared(p, listener, original.copy(request = original.request.copy(params = params)))
     }
 
+  private def usesNativeNsfw: Boolean =
+    client.supervisor.hello.forall(_.python.trim.isEmpty)
+
+  private def nativeNsfwConfig(prep: PreparedGeneration): Option[NativeNsfwCensor.GenerationConfig] =
+    if !usesNativeNsfw then None
+    else
+      prep.request.params.hooks.get("nsfw_checker").collect { case o: ujson.Obj => o }.flatMap { obj =>
+        val enabled = obj.value.get("enabled") match
+          case Some(ujson.Bool(false)) => false
+          case _                       => true
+        if !enabled then None
+        else
+          val cfg = NativeNsfwCensor.parseGenerationConfig(obj)
+          NativeNsfwCensor.prepareSession(cfg, home)
+          Some(cfg)
+      }
+
+  private def applyNativeNsfw(
+      completed: GenerationResult,
+      cfgOpt: Option[NativeNsfwCensor.GenerationConfig],
+      listener: GenerationListener
+  ): GenerationResult =
+    cfgOpt.filter(_.nudenetActive(preview = false)) match
+      case None => completed
+      case Some(cfg) =>
+        val tmpRoot = home.tmpDir(settings())
+        val extraAux = scala.collection.mutable.ArrayBuffer.empty[GeneratedImage]
+        val updated = completed.images.zipWithIndex.map { (img, idx) =>
+          val srcPath = Paths.get(img.path)
+          val srcImg = PngMetadata.readImage(srcPath)
+          val res = NativeNsfwCensor.censorGeneration(
+            srcImg, cfg, home, log = Some(line => listener.onLog(s"NudeNet: $line"))
+          )
+          if !res.detected then img
+          else
+            val censoredPath = Files.createTempFile(tmpRoot, "nudenet-", ".png")
+            PngMetadata.write(res.image, censoredPath, Nil)
+            listener.onTempFile(censoredPath)
+            res.beforeCensor.foreach { beforeImg =>
+              val p = Files.createTempFile(tmpRoot, "nudenet-before-", ".png")
+              PngMetadata.write(beforeImg, p, Nil)
+              listener.onTempFile(p)
+              extraAux += img.copy(path = p.toAbsolutePath.toString,
+                outputSuffix = Some(NativeNsfwCensor.AuxiliarySuffixes._1), auxiliaryOf = Some(idx))
+            }
+            res.mask.foreach { maskImg =>
+              val p = Files.createTempFile(tmpRoot, "nudenet-mask-", ".png")
+              PngMetadata.write(maskImg, p, Nil)
+              listener.onTempFile(p)
+              extraAux += img.copy(path = p.toAbsolutePath.toString,
+                outputSuffix = Some(NativeNsfwCensor.AuxiliarySuffixes._2), auxiliaryOf = Some(idx))
+            }
+            try Files.deleteIfExists(srcPath) catch case NonFatal(_) => ()
+            img.copy(path = censoredPath.toAbsolutePath.toString)
+        }
+        completed.copy(images = updated, auxiliaryImages = completed.auxiliaryImages ++ extraAux)
+
   private def runEnginePrepared(p: GenerationParams, listener: GenerationListener, prep: PreparedGeneration): (PreparedGeneration, GenerationResult) =
     prep.warnings.foreach(listener.onLog)
     ensureModel(prep.recorded, listener)
     if listener.isInterrupted then throw interruptedError
+    val nativeNsfw = nativeNsfwConfig(prep)
+    val workerRequest =
+      if nativeNsfw.isEmpty then prep.request
+      else prep.request.copy(params = prep.request.params.copy(hooks = prep.request.params.hooks - "nsfw_checker"))
     val activity = new java.util.concurrent.atomic.AtomicLong(System.nanoTime())
     val jsonLimits = PayloadJsonBudget.Limits(maxBytes = math.min(payloads.limits.maxEntryBytes, Int.MaxValue.toLong - 1).toInt)
     var captureKey: Option[PayloadKey] = None
@@ -714,11 +775,15 @@ final class Generator(
     val result = try
       if listener.editorPreview.nonEmpty then
         listener.onLog("Embedding editor preview uses unsaved vectors; exact request capture is disabled for this job.")
-      val handle = client.generateOwned(prep.request, prep.mode, { ev =>
+      val handle = client.generateOwned(workerRequest, prep.mode, { ev =>
         activity.set(System.nanoTime())
         ev match
           case e: EngineEvent.Progress => listener.onProgress(e)
-          case e: EngineEvent.Preview  => listener.onPreview(e)
+          case e: EngineEvent.Preview  =>
+            val outEv = nativeNsfw.filter(_.nudenetActive(preview = true)) match
+              case Some(cfg) => e.copy(jpegB64 = NativeNsfwCensor.censorPreviewB64(e.jpegB64, cfg, home))
+              case None      => e
+            listener.onPreview(outEv)
           case EngineEvent.Log(_, m)   => listener.onLog(m)
       }, listener.interruptionOwner, body => {
         val key = listener.nextPayloadKey()
@@ -757,7 +822,7 @@ final class Generator(
         payloads.snapshots.find(_.key == key).foreach(s => diagnostic(listener.onPreparedRequest(s)))
       }, () => if listener.isInterrupted then throw interruptedError, listener.imageSecret, listener.editorPreview)
       lifecycle(PayloadState.Submitted)
-      val completed = awaitActive(handle.result, activity)
+      val completed = applyNativeNsfw(awaitActive(handle.result, activity), nativeNsfw, listener)
       val completion = PayloadCaptureContext.completion(completed, jsonLimits) match
         case Right(json) => json
         case Left(reason) =>
@@ -875,11 +940,15 @@ final class Generator(
   def engineCallWith(kind: String, params: ujson.Obj, listener: GenerationListener): ujson.Value =
     val p = ujson.Obj.from(params.value)
     if !p.value.contains("output_dir") then p("output_dir") = home.tmpDir(settings()).toAbsolutePath.toString
-    val r = await(client.rawOwned(kind, p, listener.interruptionOwner, {
-      case e: EngineEvent.Progress => listener.onProgress(e)
-      case e: EngineEvent.Preview  => listener.onPreview(e)
-      case EngineEvent.Log(_, m)   => listener.onLog(m)
-    }), timeouts.upscale, kind)
+    val r: ujson.Value =
+      if kind == "image_tool" && p.value.get("tool").contains(ujson.Str("nsfw_checker")) && usesNativeNsfw then
+        NativeNsfwCensor.censorTool(p, home, Paths.get(p("output_dir").str), log = Some(listener.onLog))
+      else
+        await(client.rawOwned(kind, p, listener.interruptionOwner, {
+          case e: EngineEvent.Progress => listener.onProgress(e)
+          case e: EngineEvent.Preview  => listener.onPreview(e)
+          case EngineEvent.Log(_, m)   => listener.onLog(m)
+        }), timeouts.upscale, kind)
     r match
       case o: ujson.Obj =>
         // Model tools publish the user's requested checkpoint path. It is not

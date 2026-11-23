@@ -226,7 +226,7 @@ BASE = [
     ("light-and-ray/sd-webui-color-correction-extras", "reimplemented", "Reference color correction behavior, original-input fallback and independent method comparisons; no wrapper code copied; source 0d86f5a55d5648ca693584a1078761cf8ae26395"),
     ("Alvi-alvarez/sd-Img2img-batch-interrogator", "ported", "Per-image prompt composition, including source-derived emoticon exceptions, MIT; partial WD v3 batch only; [source ed91cec](https://github.com/Alvi-alvarez/sd-Img2img-batch-interrogator/tree/ed91cec663bcddd7ca5514264a61483c7d80f8d2)"),
     ("onnx/onnx", "dependency", "Optional local WD v3 model structure inspection"),
-    ("microsoft/onnxruntime", "dependency", "WD14 tagger and optional local WD v3 batch inference"),
+    ("microsoft/onnxruntime", "dependency", "WD14 tagger and optional local WD v3 batch inference (Python), plus bundled com.microsoft.onnxruntime:onnxruntime 1.20.0 (JVM) for native NudeNet NSFW censoring"),
     ("ultralytics/ultralytics", "dependency", "YOLO detectors for ADetailer (optional Python package)"),
     ("google-ai-edge/mediapipe", "dependency", "Optional MediaPipe Tasks face detector for Batch Face Swap; BlazeFace short-range v1 is downloaded on first use from Google and verified by size and SHA-256. Its model card states Apache-2.0; neither model nor package is bundled."),
     ("danielgatis/rembg", "dependency", "background removal models (optional Python package)"),
