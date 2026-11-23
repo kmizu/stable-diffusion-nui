@@ -59,6 +59,29 @@ object W:
   def iconButton(symbol: String, tooltip: String)(action: => Unit): Button =
     button(symbol, tooltip, Seq("icon-button"))(action)
 
+  def vectorButton(icon: Node, tooltip: String, classes: Seq[String] = Seq("icon-button"))(action: => Unit): Button =
+    val b = new Button()
+    b.setGraphic(icon)
+    b.setContentDisplay(ContentDisplay.GRAPHIC_ONLY)
+    b.getStyleClass.addAll(classes*)
+    b.setOnAction(_ => action)
+    tip(b, tooltip)
+
+  def styleSlider(sl: Slider): Slider =
+    def refreshTrack(): Unit =
+      val track = sl.lookup(".track")
+      if track != null then
+        val min = sl.getMin
+        val max = sl.getMax
+        val pct = if max <= min then 0.0 else ((sl.getValue - min) / (max - min) * 100.0).max(0.0).min(100.0)
+        track.setStyle(f"-fx-background-color: linear-gradient(to right, -sdfx-accent 0%%, -sdfx-accent $pct%.2f%%, -sdfx-track $pct%.2f%%, -sdfx-track 100%%);")
+    sl.valueProperty.addListener((_, _, _) => refreshTrack())
+    sl.minProperty.addListener((_, _, _) => refreshTrack())
+    sl.maxProperty.addListener((_, _, _) => refreshTrack())
+    sl.skinProperty.addListener((_, _, _) => javafx.application.Platform.runLater(() => refreshTrack()))
+    javafx.application.Platform.runLater(() => refreshTrack())
+    sl
+
   def hgrow[N <: Node](n: N): N =
     HBox.setHgrow(n, Priority.ALWAYS)
     n match
@@ -104,6 +127,7 @@ object W:
   def intSpinner(p: IntegerProperty, min: Int, max: Int, step: Int = 1, width: Double = 86): Spinner[Integer] =
     val f = new SpinnerValueFactory.IntegerSpinnerValueFactory(min, max, p.get.max(min).min(max), step)
     val s = new Spinner[Integer](f)
+    s.getStyleClass.add("mono-spinner")
     setNumericOwner(s, p)
     s.setEditable(true)
     s.setPrefWidth(width)
@@ -116,6 +140,7 @@ object W:
     val f = new SpinnerValueFactory.DoubleSpinnerValueFactory(min, max, p.get.max(min).min(max), step)
     f.setConverter(numberConverter(step))
     val s = new Spinner[java.lang.Double](f)
+    s.getStyleClass.add("mono-spinner")
     setNumericOwner(s, p)
     s.setEditable(true)
     s.setPrefWidth(width)
@@ -142,7 +167,7 @@ object W:
   // ---- slider + spinner ----------------------------------------------------------------------------------
 
   def doubleSlider(p: DoubleProperty, min: Double, max: Double, step: Double): HBox =
-    val sl = new Slider(min, max, p.get.max(min).min(max))
+    val sl = styleSlider(new Slider(min, max, p.get.max(min).min(max)))
     sl.setBlockIncrement(step)
     NumberSync.bindDoubleSlider(p, sl.valueProperty, min, max, step)
     val sp = doubleSpinner(p, min, max, step)
@@ -151,7 +176,7 @@ object W:
     box
 
   def intSlider(p: IntegerProperty, min: Int, max: Int, step: Int = 1, spinnerMax: Int = -1, spinnerMin: Int = -1): HBox =
-    val sl = new Slider(min, max, p.get.max(min).min(max))
+    val sl = styleSlider(new Slider(min, max, p.get.max(min).min(max)))
     sl.setBlockIncrement(step)
     NumberSync.bindIntSlider(p, sl.valueProperty, min, max, step)
     val sp = intSpinner(p, if spinnerMin > 0 then spinnerMin else min, if spinnerMax > 0 then spinnerMax else max, step)
@@ -194,6 +219,7 @@ object W:
   /** Text field editing a Long property (seeds). Invalid input reverts on focus loss. */
   def longField(p: LongProperty, width: Double = 140): TextField =
     val t = new TextField(p.get.toString)
+    t.getStyleClass.add("mono-field")
     t.setPrefWidth(width)
     t.textProperty.addListener((_, _, v) => v.trim.toLongOption.foreach(l => if l != p.get then p.set(l)))
     p.addListener((_, _, v) => if t.getText.trim.toLongOption.forall(_ != v.longValue) then t.setText(v.toString))
@@ -206,8 +232,8 @@ object W:
   final class Form:
     val grid = new GridPane()
     grid.getStyleClass.add("form")
-    grid.setHgap(10)
-    grid.setVgap(7)
+    grid.setHgap(12)
+    grid.setVgap(8)
     private val c0 = new ColumnConstraints()
     // the label column grows to the widest inline label; longer labels go above their control (see add)
     c0.setMinWidth(Region.USE_PREF_SIZE)
@@ -276,9 +302,9 @@ object W:
 
   def card(title: String, content: Node*): VBox =
     val header = label(title, "card-title")
-    val v = new VBox(8)
+    val v = new VBox(9)
     v.getChildren.add(header)
     v.getChildren.addAll(content*)
     v.getStyleClass.add("card")
-    v.setPadding(new Insets(10, 12, 12, 12))
+    v.setPadding(new Insets(12, 14, 14, 14))
     v

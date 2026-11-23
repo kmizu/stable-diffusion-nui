@@ -51,11 +51,17 @@ final class PngInfoTab(ctx: UiContext, actions: ImageActions):
         if mode == Mode.Txt2Img then current.fold(ctx.info("This image has no parameters"))((_, t) => actions.restore(t))
         else actions.sendTo(mode, Paths.get(p), Option(text.getText).filter(_.nonEmpty))
 
+  private def sendBtn(label: String, icon: javafx.scene.Node, tip: String)(f: => Unit): Button =
+    val b = W.button(label, tip)(f)
+    b.setGraphic(icon)
+    b.setGraphicTextGap(5)
+    b
+
   private val buttons = W.hbox(
     6,
-    W.button("⇢ txt2img", "Restore these parameters in txt2img")(send(Mode.Txt2Img)),
-    W.button("⇢ img2img", "Send image and parameters to img2img")(send(Mode.Img2Img)),
-    W.button("⇢ Inpaint", "Send image and parameters to Inpaint")(send(Mode.Inpaint))
+    sendBtn("txt2img", Icons.sparkles(13), "Restore these parameters in txt2img")(send(Mode.Txt2Img)),
+    sendBtn("img2img", Icons.send(13), "Send image and parameters to img2img")(send(Mode.Img2Img)),
+    sendBtn("Inpaint", Icons.brush(13), "Send image and parameters to Inpaint")(send(Mode.Inpaint))
   )
 
   image.addListener((_, _, p) =>
@@ -141,7 +147,11 @@ final class ExtrasTab(ctx: UiContext, initialUpscaler: String, initialScale: Dou
     resultReads.invalidate()
     Option(result.get).filter(_.nonEmpty).foreach(p => showResult(Paths.get(p)))
 
-  private val run: Button = W.button("⤢ Upscale", "Upscale the image with the selected upscaler", Seq("accent-button"))(upscale())
+  private val run: Button =
+    val b = W.button("Upscale", "Upscale the image with the selected upscaler", Seq("accent-button"))(upscale())
+    b.setGraphic(Icons.wand(13))
+    b.setGraphicTextGap(5)
+    b
   private def upscale(): Unit =
     val src = Option(image.get).filter(_.nonEmpty)
     val up = Option(upscaler.get).filter(_.nonEmpty)
@@ -247,10 +257,10 @@ final class ExtrasTab(ctx: UiContext, initialUpscaler: String, initialScale: Dou
   refreshComparisonOptions()
   private val resultButtons = W.hbox(
     6, compareButton,
-    W.button("⇢ img2img", "Use the result as img2img init image")(Option(result.get).filter(_.nonEmpty).foreach(p => ctx.sendToTab(Mode.Img2Img, Paths.get(p), None))),
-    W.button("⇢ Inpaint", "Use the result for inpainting")(Option(result.get).filter(_.nonEmpty).foreach(p => ctx.sendToTab(Mode.Inpaint, Paths.get(p), None))),
-    W.iconButton("⧉", "Copy the result")(Option(result.get).filter(_.nonEmpty).foreach(p => ImageActions.copyImage(ctx, Paths.get(p)))),
-    W.iconButton("▤", "Show in folder")(Option(result.get).filter(_.nonEmpty).foreach(p => ImageActions.openFolder(Paths.get(p))))
+    W.button("img2img", "Use the result as img2img init image")(Option(result.get).filter(_.nonEmpty).foreach(p => ctx.sendToTab(Mode.Img2Img, Paths.get(p), None))),
+    W.button("Inpaint", "Use the result for inpainting")(Option(result.get).filter(_.nonEmpty).foreach(p => ctx.sendToTab(Mode.Inpaint, Paths.get(p), None))),
+    W.vectorButton(Icons.copy(14), "Copy the result")(Option(result.get).filter(_.nonEmpty).foreach(p => ImageActions.copyImage(ctx, Paths.get(p)))),
+    W.vectorButton(Icons.folder(14), "Show in folder")(Option(result.get).filter(_.nonEmpty).foreach(p => ImageActions.openFolder(Paths.get(p))))
   )
 
   private val cnUseResult = new javafx.beans.property.SimpleBooleanProperty(false)

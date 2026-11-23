@@ -671,3 +671,39 @@ class InspectGenerationMetadataSuite extends munit.FunSuite:
     PngMetadata.write(new BufferedImage(4, 4, BufferedImage.TYPE_INT_RGB), path, Seq("parameters" -> "cat\nSteps: 20, Seed: 4, Size: 512x512"))
     assert(!InspectGenerationMetadata.inspect(path.toString, policy, dir)("always_on").obj.contains("compile"))
   }
+
+  test("T-GATE and Fast mode infotext become typed candidates without leaving unapplied fields") {
+    val dir = Files.createTempDirectory("mcp-inspect-")
+    val policy = new PathPolicy(() => Seq(dir))
+    val tgatePlugin = new sdfx.plugins.TGatePlugin
+    val tgateParams = tgatePlugin.process(sdfx.core.model.GenerationParams(prompt = "cat"),
+      sdfx.core.plugins.api.Values(Map("enabled" -> "true", "gate_step" -> "12")))
+    val tgatePath = dir.resolve("tgate.png")
+    PngMetadata.write(new BufferedImage(4, 4, BufferedImage.TYPE_INT_RGB), tgatePath,
+      Seq("parameters" -> sdfx.core.infotext.Infotext.write(tgateParams, sdfx.core.infotext.ImageFacts(seed = 4))))
+    val tgateInspected = InspectGenerationMetadata.inspect(tgatePath.toString, policy, dir)
+    assertEquals(tgateInspected("always_on")("tgate")("enabled").bool, true)
+    assertEquals(tgateInspected("always_on")("tgate")("gate_step").num, 12.0)
+    assert(!tgateInspected("unapplied_fields").obj.contains(sdfx.plugins.TGatePlugin.GateStepKey))
+
+    val fastPlugin = new sdfx.plugins.FastModePlugin
+    val fastValues = sdfx.core.plugins.api.Values(sdfx.core.plugins.api.Values.defaults(fastPlugin.controls).map ++ Map("enabled" -> "true"))
+    val fastParams = fastPlugin.process(sdfx.core.model.GenerationParams(prompt = "cat", cfgScale = 7.0), fastValues)
+    val fastPath = dir.resolve("fast.png")
+    PngMetadata.write(new BufferedImage(4, 4, BufferedImage.TYPE_INT_RGB), fastPath,
+      Seq("parameters" -> sdfx.core.infotext.Infotext.write(fastParams, sdfx.core.infotext.ImageFacts(seed = 4))))
+    val fastInspected = InspectGenerationMetadata.inspect(fastPath.toString, policy, dir)
+    val fm = fastInspected("always_on")("fast_mode")
+    assertEquals(fm("enabled").bool, true)
+    assertEquals(fm("guidance_until").num, 0.7)
+    assertEquals(fm("interval").num, 3.0)
+    assertEquals(fm("order").num, 1.0)
+    assertEquals(fm("gate_step").num, 8.0)
+    assert(!fastInspected("always_on").obj.contains("deepcache"))
+    assert(!fastInspected("always_on").obj.contains("tgate"))
+    val unapplied = fastInspected("unapplied_fields").obj.keySet
+    assert(!unapplied.contains(sdfx.plugins.FastModePlugin.InfotextKey), unapplied)
+    assert(!unapplied.contains(sdfx.plugins.TGatePlugin.GateStepKey), unapplied)
+    assert(!unapplied.exists(sdfx.plugins.DeepCachePlugin.InfotextKeys.contains), unapplied)
+    assert(!unapplied.contains("CFG schedule"), unapplied)
+  }

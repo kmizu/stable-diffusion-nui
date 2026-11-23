@@ -233,12 +233,12 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   private val interruptionControls = new InterruptionControls(ctx)
   val statusBar = new StatusBar(progress, () => generate(false), () => generate(true), () => interrupt(),
     () => clearQueue(), interruptionControls.node)
-  val topBar = new TopBar(ctx, model, loadCheckpoint, setVae, () => refreshCatalog(), () => restartEngine(), () => openSettings())
+  val topBar = new TopBar(ctx, model, loadCheckpoint, setVae, () => refreshCatalog(), () => restartEngine(), () => openSettings(), () => toggleTheme())
 
   private val tabs = new TabPane()
   tabs.setId("main-tabs")
   tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE)
-  tabs.getStyleClass.add("main-tabs")
+  tabs.getStyleClass.addAll("main-tabs", "nav-driven-tabs")
   private val modeTabs: Map[Mode, Tab] = Mode.values.map(m => m -> new Tab(m.label, panels(m).node)).toMap
   private val vramEstimates = Mode.values.map { mode =>
     val estimate = new VramEstimatePane(ctx, () => vms(mode).toParams)
@@ -362,13 +362,29 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   SplitPane.setResizableWithParent(tabs, false)
   tabs.setMinWidth(420)
 
+  private val navRail = new NavigationRail(tabs)
   private val layout = new BorderPane()
   layout.setTop(topBar.node)
+  layout.setLeft(navRail.node)
   layout.setCenter(mainSplit)
   layout.setBottom(statusBar.node)
   val root = new StackPane(layout, ctx.toaster.layer)
   val scene = new Scene(root, initial.window.width, initial.window.height)
   Theme.apply(scene, services.settings.theme)
+
+  private def applyThemeToAllStages(themeName: String): Unit =
+    Theme.apply(scene, themeName)
+    topBar.setTheme(themeName)
+    NativeWindowChrome.apply(stage, themeName)
+    Seq(payloadStage, presetStage, generationStatesStage).filter(_ != null).foreach { st =>
+      Option(st.getScene).foreach(Theme.apply(_, themeName))
+      NativeWindowChrome.apply(st, themeName)
+    }
+
+  private def toggleTheme(): Unit =
+    val next = if services.settings.theme == "light" then "dark" else "light"
+    services.updateSettings(_.copy(theme = next))
+    applyThemeToAllStages(next)
 
   private var payloadStage: Stage = null
   private var payloadPane: RequestPayloadPane = null
@@ -434,10 +450,12 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
         val statesScene = new Scene(generationStatesPane.node, 960, 780)
         Theme.apply(statesScene, services.settings.theme)
         generationStatesStage.setScene(statesScene)
+        generationStatesStage.setOnShown(_ => NativeWindowChrome.apply(generationStatesStage, services.settings.theme))
         generationStatesSession.reload()
       generationStatesPane.openMode(mode)
       generationStatesStage.show()
       generationStatesStage.toFront()
+      NativeWindowChrome.apply(generationStatesStage, services.settings.theme)
 
   def presetsInspectorStage: Option[Stage] = Option(presetStage)
 
@@ -463,10 +481,12 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
         val presetScene = new Scene(presetPane.node, 1040, 740)
         Theme.apply(presetScene, services.settings.theme)
         presetStage.setScene(presetScene)
+        presetStage.setOnShown(_ => NativeWindowChrome.apply(presetStage, services.settings.theme))
         presetPane.reloadTools()
       presetPane.openMode(mode)
       presetStage.show()
       presetStage.toFront()
+      NativeWindowChrome.apply(presetStage, services.settings.theme)
 
   /** Stable native acceptance seam. Opening only reads the memory-only store and never starts inference. */
   def payloadInspectorStage: Option[Stage] = Option(payloadStage)
@@ -482,9 +502,11 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
         val inspectorScene = new Scene(payloadPane.node, 1040, 740)
         Theme.apply(inspectorScene, services.settings.theme)
         payloadStage.setScene(inspectorScene)
+        payloadStage.setOnShown(_ => NativeWindowChrome.apply(payloadStage, services.settings.theme))
       payloadPane.openMode(mode.key)
       payloadStage.show()
       payloadStage.toFront()
+      NativeWindowChrome.apply(payloadStage, services.settings.theme)
 
   private def refreshComparisonOptions(): Unit =
     preview.comparisonButton(if activeMode == Mode.Txt2Img then services.settings.comparisonTxtButton else services.settings.comparisonSendButtons)
@@ -674,7 +696,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
     if msg.contains("no_model") || msg.toLowerCase.contains("no model") || msg.contains("checkpoint not found") then
       s"$msg\nPut .safetensors in models/checkpoints or add folders in Settings."
     else if msg.contains("[oom]") || msg.toLowerCase.contains("out of memory") then
-      s"$msg\nTry a smaller size / batch, or VRAM mode medvram in Settings."
+      s"$msg\nTry a smaller size / batch, or adjust VRAM limit / weight offload / VRAM mode in Settings."
     else msg
 
   // ---- actions -----------------------------------------------------------------------------------------
@@ -1086,7 +1108,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
         case Right(s) =>
           ctx.hiresPreferences.set(s.hiresFixTweaks)
           if s.mcpHttpEnabled != before.mcpHttpEnabled || s.mcpHttpPort != before.mcpHttpPort || s.mcpToken != before.mcpToken then applyMcp(s)
-          if s.theme != before.theme then Theme.apply(scene, s.theme)
+          if s.theme != before.theme then applyThemeToAllStages(s.theme)
           if s.localization != before.localization then applyLocalization()
           if s.modelDirs != before.modelDirs then refreshCatalog()
           if s.outputDir != before.outputDir || s.hiresFixTweaks.outputDir != before.hiresFixTweaks.outputDir then
@@ -1175,6 +1197,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
     applyLocalization()
     stage.show()
     localization.localizer.sweepNow()
+    Fx.later(NativeWindowChrome.apply(stage, services.settings.theme))
     // Divider positions are re-applied while the window settles (the first heights can be pre-layout ones),
     // then left alone so user drags stick.
     def applyDividers(): Unit =

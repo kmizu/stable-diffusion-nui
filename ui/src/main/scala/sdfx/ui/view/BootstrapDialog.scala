@@ -125,3 +125,4 @@ final class BootstrapDialog(home: AppHome, settings: Settings, stylesheets: Seq[
       finish(Result.Cancelled)
     )
     stage.show()
+    Fx.later(NativeWindowChrome.apply(stage, settings.theme))

@@ -48,3 +48,17 @@ class FastModeSuite extends munit.FunSuite:
     assert(allSteps.hooks.contains("deepcache") && allSteps.hooks.contains("tgate") && !allSteps.hooks.contains("cfg_schedule"))
     val noGuidance = plugin.process(GenerationParams(cfgScale = 1.0), enabled())
     assert(!noGuidance.hooks.contains("cfg_schedule"))
+
+  test("FastModePlugin.replay parses v0.31 and v0.28 infotext and rejects malformed values"):
+    assertEquals(FastModePlugin.replay(Map.empty), Some(Values(Map("enabled" -> "false"))))
+    val p = plugin.process(GenerationParams(cfgScale = 7.0), enabled())
+    val restored = FastModePlugin.replay(Map(FastModePlugin.InfotextKey -> p.extra(FastModePlugin.InfotextKey)))
+    assertEquals(restored, Some(Values(Map(
+      "enabled" -> "true", "guidance_until" -> "0.7", "interval" -> "3", "order" -> "1", "gate_step" -> "8"))))
+    // v0.28 format (without TaylorSeer / T-GATE) defaults order and gate_step to 0
+    val legacy = FastModePlugin.replay(Map(FastModePlugin.InfotextKey -> "CFG until 0.65, DeepCache interval 4"))
+    assertEquals(legacy, Some(Values(Map(
+      "enabled" -> "true", "guidance_until" -> "0.65", "interval" -> "4", "order" -> "0", "gate_step" -> "0"))))
+    assertEquals(FastModePlugin.replay(Map(FastModePlugin.InfotextKey -> "CFG until 0.1, DeepCache interval 3")), None)
+    assertEquals(FastModePlugin.replay(Map(FastModePlugin.InfotextKey -> "CFG until 0.7, Unknown 1")), None)
+    assertEquals(FastModePlugin.replay(Map(FastModePlugin.InfotextKey -> "")), None)

@@ -4,7 +4,17 @@ nav: リリースノート
 description: Stable Diffusion NUI（旧 SDFX）の各リリースで追加・変更された機能と、配布ファイルの SHA-256 の一覧です。
 ---
 
-各リリースの配布ファイルは GitHub のリリースページからダウンロードできます。どの版も Java ランタイムを同梱していますが、Python とモデルファイルは別に用意する必要があります。
+各リリースの配布ファイルは GitHub のリリースページからダウンロードできます。どの版も Java ランタイムを同梱していますが、モデルファイルは別に用意する必要があります（v0.11 以降は Python なしの `scala-torch` が標準です）。
+
+## v0.31
+
+2026-11-23 公開。[GitHub のリリースページ](https://github.com/kmizu/stable-diffusion-nui/releases/tag/v0.31)
+
+- **Python レス標準起動と純 JVM ドライラン**: `scala-torch` (`0.1.3-gh53`) を標準エンジンとし、`--dry-run` も Python 不要の純 JVM ワーカーで動作します。
+- **研究論文ベースの高速化**: FlashAttention-2、DeepCache + TaylorSeer 予測、T-GATE クロスアテンションキャッシュ、Align Your Steps (AYS) スケジュールを追加・統合し、Fast mode の PNG 復元と MCP メタデータ検査にも対応しました。
+- **ネイティブ風デスクトップ UI 刷新**: 左側の折りたたみ式ナビゲーションサイドバー、Windows ダーク/ライトタイトルバー連携、ベクターアイコン、進捗トラック付きスライダー、Fast mode クイックトグル、拡張機能検索・有効フィルタを追加しました。
+
+**SDNUI-v0.31-windows-x64.zip** を展開し、**SDNUI/SDNUI.exe** を起動してください。SHA-256: `7251fa25326898b8f9b4967e7f90bb4042db4ffcd85cd650e7437ff4929b6ca5`
 
 ## v0.1
 

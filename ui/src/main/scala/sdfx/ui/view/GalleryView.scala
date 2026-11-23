@@ -138,10 +138,10 @@ final class GalleryView(ctx: UiContext, vm: GalleryVM, actions: ImageActions, on
 
   private val search = new TextField()
   search.textProperty.bindBidirectional(vm.query)
-  search.setPromptText("⌕  Search prompts / file names")
+  search.setPromptText("Search prompts / file names")
   search.getStyleClass.add("search-field")
   W.tip(search, "Filter the gallery by prompt text or file name (all words must match)")
-  private val count = W.label("", "hint")
+  private val count = W.label("", "pill-badge")
   val generationChoice = new ComboBox[String](vm.generations)
   generationChoice.setConverter(new StringConverter[String]:
     override def toString(id: String): String =
@@ -189,12 +189,11 @@ final class GalleryView(ctx: UiContext, vm: GalleryVM, actions: ImageActions, on
   updateCount()
 
   val node: VBox =
-    val header = W.hbox(8, W.label("Gallery", "pane-title"), count, W.spacer(), W.hgrow(search))
-    val tools = W.hbox(8, generationChoice, saveZipButton)
-    search.setMaxWidth(320)
-    val v = new VBox(6, header, tools, list)
+    val header = W.hbox(8, W.label("Gallery", "pane-title"), count, generationChoice, saveZipButton, W.spacer(), W.hgrow(search))
+    search.setMaxWidth(280)
+    val v = new VBox(8, header, list)
     v.getStyleClass.add("gallery-box")
-    v.setPadding(new Insets(6, 10, 8, 10))
+    v.setPadding(new Insets(8, 12, 10, 12))
     VBox.setVgrow(list, Priority.ALWAYS)
     v
 

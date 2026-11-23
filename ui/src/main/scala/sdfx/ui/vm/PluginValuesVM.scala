@@ -156,6 +156,24 @@ final class PluginsVM(val mode: Mode, scripts: Seq[Plugin], alwaysOnPlugins: Seq
     sdfx.plugins.CompilePlugin.replay(fields).foreach(values => form("compile").foreach(_.load(values)))
     sdfx.plugins.DeepCachePlugin.replay(fields).foreach(values => form("deepcache").foreach(_.load(values)))
     sdfx.plugins.TGatePlugin.replay(fields).foreach(values => form("tgate").foreach(_.load(values)))
+    sdfx.plugins.FastModePlugin.replay(fields).foreach { fm =>
+      form("fast_mode").foreach(_.load(fm))
+      if fm.bool("enabled") then
+        val fmInterval = fm.int("interval", 3)
+        val fmOrder = fm.int("order", 0)
+        val fmGateStep = fm.int("gate_step", 0)
+        form("deepcache").foreach { dc =>
+          val v = dc.values
+          if v.bool("enabled") && fmInterval >= 2 && v.int("interval", -1) == fmInterval &&
+              v.int("branch", -1) == 0 && v.int("full_first", -1) == 5 && v.int("order", 0) == fmOrder then
+            dc.load(Values(Map("enabled" -> "false")))
+        }
+        form("tgate").foreach { tg =>
+          val v = tg.values
+          if v.bool("enabled") && fmGateStep >= 1 && v.int("gate_step", -1) == fmGateStep then
+            tg.load(Values(Map("enabled" -> "false")))
+        }
+    }
     def flag(key: String): Option[Boolean] = fields.get(key).flatMap { v =>
       v.trim.toLowerCase(java.util.Locale.ROOT) match
         case "true" => Some(true)

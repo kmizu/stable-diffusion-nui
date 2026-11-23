@@ -8,9 +8,9 @@
 
 **マニュアル: <https://kmizu.github.io/stable-diffusion-nui/>**（English: <https://kmizu.github.io/stable-diffusion-nui/en/>）
 
-![SDNUIのネイティブ画面。左にプロンプトと生成設定、右に生成画像と20枚のギャラリー、ZIP保存ボタン。](docs/images/sdnui-desktop.png)
+![SDNUIのネイティブ画面。左にナビゲーションバーとプロンプト・生成設定、右に生成画像とギャラリー、下部に生成バー。](docs/images/sdnui-desktop.png)
 
-*実際のSDNUI画面：4枚同時 × 5回のバッチ生成結果。*
+*実際のSDNUI画面：Python なしの scala-torch エンジンで SD1.5 モデル（animekawa_v10）を実行した例。*
 
 **English summary.** Stable Diffusion NUI is a standalone desktop app for local Stable Diffusion image generation:
 a Scala 3 + JavaFX 21 UI, an MCP server so AI agents (Claude Code etc.) can generate images, and a Python
@@ -25,9 +25,9 @@ User manual: <https://kmizu.github.io/stable-diffusion-nui/en/>. Requirements: J
 
 ローカルで動く Stable Diffusion 用のデスクトップアプリです。
 
-- UI: Scala 3 + JavaFX 21(`ui` モジュール)
+- UI: Scala 3 + JavaFX 21(`ui` モジュール、Fluent 風サイドバー・ダーク/ライトテーマ・Windows ネイティブタイトルバー対応)
 - MCP サーバー: AI エージェントから画像生成を呼べる(`mcp` モジュール)
-- 推論エンジン: Python + diffusers(`python/sdfx`)。UI/MCP から子プロセスとして起動され、stdin/stdout の JSON Lines で通信します
+- 推論エンジン: **Python なしの `scala-torch`（標準）** または Python + diffusers(`python/sdfx`)。UI/MCP から子プロセスとして起動され、stdin/stdout の JSON Lines で通信します
 - ビルド: sbt 2.0.12 + sbt-assembly(fat jar 1 本 `target/stable-diffusion-nui.jar`)
 
 このフォルダだけで完結します。親ディレクトリの reForge には依存しません。

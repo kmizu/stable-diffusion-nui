@@ -9,7 +9,12 @@ import sdfx.ui.Fx
 /** One request at a time, only for a visible generation form and an idle runtime. */
 final class VramEstimatePane(ctx: UiContext, params: () => GenerationParams):
   val node = new Label("VRAM estimate: calibrate the loaded model in VRAM Estimator.")
+  node.getStyleClass.add("vram-estimate-bar")
+  node.setMaxWidth(Double.MaxValue)
   node.setWrapText(true)
+  if ctx.services.dryRun then
+    node.setVisible(false)
+    node.setManaged(false)
   private var active = false
   private var closed = false
   private var busy = false
@@ -19,7 +24,7 @@ final class VramEstimatePane(ctx: UiContext, params: () => GenerationParams):
   def setActive(value: Boolean): Unit =
     active = value
     epoch += 1
-    if value then { timer.play(); refresh() } else timer.stop()
+    if value && !ctx.services.dryRun then { timer.play(); refresh() } else timer.stop()
   private def refresh(): Unit =
     if !closed && active && !busy && !ctx.vramEstimator.isBenchmarking && ctx.services.queue.isIdle then
       val generation = params()

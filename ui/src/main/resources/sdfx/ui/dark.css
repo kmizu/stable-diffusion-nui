@@ -1,47 +1,50 @@
-/* SDFX dark theme: color tokens + Modena base colors. Rules live in app.css. */
+/* SDFX dark theme: native Fluent-inspired color tokens + Modena base overrides. Rules live in app.css. */
 .root, .search-popup, .context-menu, .tooltip, .dialog-pane, .bootstrap {
-    -sdfx-bg: #202020;
-    -sdfx-panel: #282828;
-    -sdfx-panel-2: #303030;
-    -sdfx-canvas: #1a1a1a;
-    -sdfx-input: #1c1c1c;
-    -sdfx-border: #3c3c3c;
-    -sdfx-border-strong: #555555;
-    -sdfx-text: #e3e5e8;
-    -sdfx-muted: #9a9ca3;
-    -sdfx-faint: #6d7078;
-    -sdfx-accent: #286ba9;
-    -sdfx-accent-hover: #3882c5;
-    -sdfx-accent-soft: rgba(80, 156, 220, 0.18);
-    -sdfx-ok: #3ccf91;
-    -sdfx-warn: #f0b232;
-    -sdfx-danger: #f2545b;
-    -sdfx-hires: #2fb7d6;
-    -sdfx-shadow: rgba(0, 0, 0, 0.45);
+    -sdfx-bg: #18191c;
+    -sdfx-chrome: #1e2024;
+    -sdfx-panel: #23252a;
+    -sdfx-panel-2: #2b2e35;
+    -sdfx-hover: #333740;
+    -sdfx-canvas: #121316;
+    -sdfx-input: #16181c;
+    -sdfx-track: #383c46;
+    -sdfx-border: rgba(255, 255, 255, 0.09);
+    -sdfx-border-strong: rgba(255, 255, 255, 0.17);
+    -sdfx-text: #eceef2;
+    -sdfx-muted: #9aa0ad;
+    -sdfx-faint: #686e7b;
+    -sdfx-accent: #3b82f6;
+    -sdfx-accent-hover: #5294ff;
+    -sdfx-accent-soft: rgba(59, 130, 246, 0.16);
+    -sdfx-ok: #34d399;
+    -sdfx-warn: #f59e0b;
+    -sdfx-danger: #ef4444;
+    -sdfx-hires: #38bdf8;
+    -sdfx-shadow: rgba(0, 0, 0, 0.50);
 
-    -fx-base: #282828;
-    -fx-background: #202020;
-    -fx-control-inner-background: #1c1c1c;
-    -fx-control-inner-background-alt: #202125;
-    -fx-accent: #286ba9;
-    -fx-focus-color: #286ba9;
-    -fx-faint-focus-color: rgba(80, 156, 220, 0.22);
-    -fx-default-button: #286ba9;
-    -fx-selection-bar: #255982;
-    -fx-selection-bar-non-focused: #304657;
-    -fx-text-base-color: #e3e5e8;
-    -fx-text-background-color: #e3e5e8;
-    -fx-text-inner-color: #e3e5e8;
-    -fx-mark-color: #e3e5e8;
+    -fx-base: #23252a;
+    -fx-background: #18191c;
+    -fx-control-inner-background: #16181c;
+    -fx-control-inner-background-alt: #1b1d22;
+    -fx-accent: #3b82f6;
+    -fx-focus-color: #3b82f6;
+    -fx-faint-focus-color: rgba(59, 130, 246, 0.22);
+    -fx-default-button: #3b82f6;
+    -fx-selection-bar: #2563eb;
+    -fx-selection-bar-non-focused: #2b3a55;
+    -fx-text-base-color: #eceef2;
+    -fx-text-background-color: #eceef2;
+    -fx-text-inner-color: #eceef2;
+    -fx-mark-color: #eceef2;
     -fx-dark-text-color: #111214;
     -fx-mid-text-color: #c8cad0;
     -fx-light-text-color: #ffffff;
-    -fx-box-border: #3c3c3c;
-    -fx-text-box-border: #3c3c3c;
-    -fx-outer-border: #3c3c3c;
+    -fx-box-border: rgba(255, 255, 255, 0.10);
+    -fx-text-box-border: rgba(255, 255, 255, 0.10);
+    -fx-outer-border: rgba(255, 255, 255, 0.10);
     -fx-inner-border: transparent;
-    -fx-body-color: #34363c;
-    -fx-color: #34363c;
+    -fx-body-color: #2b2e35;
+    -fx-color: #2b2e35;
 }
 
 .model-browser-status { -fx-text-fill: #bac4d3; }

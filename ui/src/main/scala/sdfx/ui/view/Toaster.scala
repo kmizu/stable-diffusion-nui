@@ -20,14 +20,13 @@ final class Toaster:
     val text = new Label(message)
     text.setWrapText(true)
     text.setMaxWidth(420)
-    val icon = new Label(kind match
-      case Toaster.Kind.Info    => "ℹ"
-      case Toaster.Kind.Success => "✓"
-      case Toaster.Kind.Error   => "⚠"
+    val icon = new javafx.scene.layout.StackPane(kind match
+      case Toaster.Kind.Info    => Icons.info(15)
+      case Toaster.Kind.Success => Icons.check(15)
+      case Toaster.Kind.Error   => Icons.alert(15)
     )
     icon.getStyleClass.add("toast-icon")
-    val close = new Button("✕")
-    close.getStyleClass.addAll("icon-button", "toast-close")
+    val close = W.vectorButton(Icons.close(12), "", Seq("icon-button", "toast-close"))(())
     val box = new HBox(10, icon, text, close)
     HBox.setHgrow(text, Priority.ALWAYS)
     box.setAlignment(Pos.TOP_LEFT)

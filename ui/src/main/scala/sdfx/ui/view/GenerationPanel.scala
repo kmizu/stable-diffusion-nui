@@ -245,15 +245,41 @@ final class GenerationPanel(
       .add("Sampler", row)
       .add("Steps", stepsRow, "Number of denoising steps (20–30 is typical)")
       .add("CFG Scale", W.doubleSlider(vm.cfgScale, 1, 30, 0.5), "How strongly the prompt is followed (5–8 is typical)")
+    plugins.form("fast_mode").flatMap(_.prop("enabled")).foreach { enabledProp =>
+      val quick = new CheckBox("Fast mode")
+      quick.setId(s"fast-mode-quick-${mode.key}")
+      quick.selectedProperty.bindBidirectional(PluginForm.boolProp(enabledProp))
+      quick.getStyleClass.add("fast-mode-check")
+      W.tip(quick, "DeepCache + TaylorSeer + T-GATE + CFG 70% for faster draft generation")
+      val summary = W.label("DeepCache + T-GATE + CFG 70%", "hint")
+      val configure = W.button("Configure", "Expand Fast mode settings")(
+        sections.get(s"${mode.key}.plugin.fast_mode").foreach { pane =>
+          pane.setVisible(true)
+          pane.setManaged(true)
+          pane.setExpanded(true)
+          javafx.application.Platform.runLater { () =>
+            val total = content.getHeight - node.getViewportBounds.getHeight
+            if total > 0 then
+              val y = pane.getBoundsInParent.getMinY
+              node.setVvalue((y / total).max(0.0).min(1.0))
+          }
+        }
+      )
+      configure.getStyleClass.add("subtle-link-button")
+      val fastRow = W.hbox(8, Icons.zap(14), quick, summary, W.spacer(), configure)
+      fastRow.getStyleClass.add("fast-mode-row")
+      f.full(fastRow)
+    }
     W.card("Sampling", f.grid)
 
   private def size: Node =
-    val swap = W.iconButton("⇅", "Swap width and height") {
+    val swap = W.vectorButton(Icons.swap(14), "Swap width and height") {
       val w = vm.width.get
       vm.width.set(vm.height.get)
       vm.height.set(w)
     }
-    val presets = new MenuButton("▦")
+    val presets = new MenuButton()
+    presets.setGraphic(Icons.grid(14))
     presets.getStyleClass.add("icon-button")
     // Keep the slider and numeric fields aligned despite the menu's arrow.
     Seq(swap, presets).foreach { button =>
@@ -299,15 +325,15 @@ final class GenerationPanel(
     val field = W.longField(vm.seed)
     presetLongFields("Seed") = (field, vm.seed)
     W.tip(field, "Seed (-1 = random)")
-    val dice = W.iconButton("⚄", "Random seed (-1)")(vm.seed.set(-1))
-    val recycle = W.iconButton("♻", "Reuse the seed of the last image")(if lastSeed() >= 0 then vm.seed.set(lastSeed()) else ctx.info("No image generated yet"))
+    val dice = W.vectorButton(Icons.dice(14), "Random seed (-1)")(vm.seed.set(-1))
+    val recycle = W.vectorButton(Icons.recycle(14), "Reuse the seed of the last image")(if lastSeed() >= 0 then vm.seed.set(lastSeed()) else ctx.info("No image generated yet"))
     val sub = W.longField(vm.subseed)
     presetLongFields("Variation seed") = (sub, vm.subseed)
     val variationToggle = W.check("Enable variation", vm.variationEnabled)
     variationToggle.setId(s"variation-enabled-${mode.key}")
     val variation = W.form()
       .full(variationToggle)
-      .add("Var. seed", W.hbox(6, W.hgrow(sub), W.iconButton("⚄", "Random variation seed (-1)")(vm.subseed.set(-1))), "Variation seed mixed into the main seed")
+      .add("Var. seed", W.hbox(6, W.hgrow(sub), W.vectorButton(Icons.dice(14), "Random variation seed (-1)")(vm.subseed.set(-1))), "Variation seed mixed into the main seed")
       .add("Strength", W.doubleSlider(vm.subseedStrength, 0, 1, 0.01), "0 = only the main seed, 1 = only the variation seed")
       .full(W.label("Values are retained while variation is disabled and used again when enabled.", "hint"))
     val varPane = track("variation", W.section("Variation seed", variation.grid, isExpanded("variation", false)))
@@ -350,6 +376,8 @@ final class GenerationPanel(
       v.getChildren.add(wdBatchSection)
     v.getChildren.addAll(sampling, size, seed)
     val states = W.button("Named generation states…", "Save or restore a complete named settings snapshot") { openStates(mode) }
+    states.setGraphic(Icons.save(13))
+    states.setGraphicTextGap(6)
     states.setId(s"generation-states-open-${mode.key}")
     v.getChildren.add(states)
     v.getChildren.add(track("presets", presetsSection))
@@ -357,10 +385,43 @@ final class GenerationPanel(
     if mode == Mode.Txt2Img then v.getChildren.add(track("hires", ExtraSections.hires(ctx, vm, isExpanded("hires", false), plugins.form("hires_fix_tweaks"))))
     v.getChildren.add(track("controlnet", ExtraSections.controlNet(ctx, vm, isExpanded("controlnet", false))))
     v.getChildren.add(W.card("Script", PluginForm.scriptSection(ctx, plugins)))
-    plugins.alwaysOnForms.filterNot(f => Set("hires_fix_tweaks", "inpaint_difference")(f.plugin.id)).foreach { f =>
+    val alwaysOnEntries = plugins.alwaysOnForms.filterNot(f => Set("hires_fix_tweaks", "inpaint_difference")(f.plugin.id)).map { f =>
       val key = s"plugin.${f.plugin.id}"
-      v.getChildren.add(track(key, PluginForm.alwaysOnSection(ctx, f, isExpanded(key, false))))
+      val pane = track(key, PluginForm.alwaysOnSection(ctx, f, isExpanded(key, false)))
+      (f, pane)
     }
+    if alwaysOnEntries.nonEmpty then
+      val activeCountBadge = sdfx.ui.i18n.Localizer.skip(W.label("", "pill-badge"))
+      val filterField = new TextField()
+      filterField.setId(s"extensions-filter-${mode.key}")
+      filterField.setPromptText("Filter extensions…")
+      val activeOnlyBtn = new ToggleButton("Active only")
+      activeOnlyBtn.setId(s"extensions-active-only-${mode.key}")
+      activeOnlyBtn.getStyleClass.add("pill-toggle")
+      def refreshExtensions(): Unit =
+        val activeCount = alwaysOnEntries.count(_._1.isActive)
+        activeCountBadge.setText(s"$activeCount active")
+        val q = Option(filterField.getText).getOrElse("").trim.toLowerCase(java.util.Locale.ROOT)
+        val onlyActive = activeOnlyBtn.isSelected
+        alwaysOnEntries.foreach { (form, pane) =>
+          val matchesQuery = q.isEmpty ||
+            form.plugin.name.toLowerCase(java.util.Locale.ROOT).contains(q) ||
+            form.plugin.id.toLowerCase(java.util.Locale.ROOT).contains(q) ||
+            form.plugin.description.toLowerCase(java.util.Locale.ROOT).contains(q)
+          val visible = (!onlyActive || form.isActive) && matchesQuery
+          pane.setVisible(visible)
+          pane.setManaged(visible)
+        }
+      filterField.textProperty.addListener((_, _, _) => refreshExtensions())
+      activeOnlyBtn.selectedProperty.addListener((_, _, _) => refreshExtensions())
+      alwaysOnEntries.foreach(_._1.prop("enabled").foreach(_.addListener((_, _, _) => refreshExtensions())))
+      refreshExtensions()
+      val extHeaderTop = W.hbox(8, Icons.layers(14), W.label("Extensions", "card-title"), activeCountBadge, W.spacer(), activeOnlyBtn)
+      val extCard = new VBox(8, extHeaderTop, filterField)
+      extCard.getStyleClass.addAll("card", "extensions-header")
+      extCard.setPadding(new Insets(10, 12, 10, 12))
+      v.getChildren.add(extCard)
+      alwaysOnEntries.foreach(e => v.getChildren.add(e._2))
     v
 
   val node: ScrollPane =

@@ -158,7 +158,9 @@ object ExtraSections:
       previewView.setImage(null)
       previewBox.getChildren.clear()
     })
-    val previewBtn = W.button("◉ Preview preprocessor", "Run the preprocessor on the control image and show the result")(())
+    val previewBtn = W.button("Preview preprocessor", "Run the preprocessor on the control image and show the result")(())
+    previewBtn.setGraphic(Icons.sparkles(13))
+    previewBtn.setGraphicTextGap(5)
     previewBtn.setOnAction(_ =>
       val img = Option(u.image.get).filter(_.nonEmpty).orElse(Option(vm.initImage.get).filter(_.nonEmpty))
       img match

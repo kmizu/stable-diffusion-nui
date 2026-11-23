@@ -47,7 +47,10 @@ object ImageActions:
 /** Big preview (live engine previews, then the final image) with its infotext and actions. */
 final class PreviewPane(ctx: UiContext, actions: ImageActions):
   val zoom = new ZoomImageView()
-  private val empty = new Label("✦\nGenerated images appear here\nCtrl+Enter to generate")
+  private val empty = new Label("Generated images appear here\nCtrl+Enter to generate")
+  empty.setGraphic(Icons.sparkles(28))
+  empty.setContentDisplay(ContentDisplay.TOP)
+  empty.setGraphicTextGap(10)
   empty.getStyleClass.add("empty-preview")
   empty.setMouseTransparent(true)
   def imageStatus: String = empty.getText
@@ -87,32 +90,40 @@ final class PreviewPane(ctx: UiContext, actions: ImageActions):
       case Some((p, t)) => f(p, t)
       case None         => ctx.info("No image selected")
 
-  private val compareButton = W.button("Send to Comparison", "Compare current mode input/output or previous txt2img result")(actions.compareCurrent())
+  private val compareButton = W.button("Compare", "Compare current mode input/output or previous txt2img result")(actions.compareCurrent())
+  compareButton.setGraphic(Icons.columns(13))
+  compareButton.setGraphicTextGap(5)
   compareButton.setId("preview-send-comparison")
   def comparisonButton(option: String): Unit =
-    compareButton.setText(if option == "Icon" then "⇄" else "Send to Comparison")
+    compareButton.setText(if option == "Icon" then "" else "Compare")
+    compareButton.setContentDisplay(if option == "Icon" then ContentDisplay.GRAPHIC_ONLY else ContentDisplay.LEFT)
     compareButton.setManaged(option != "Off")
     compareButton.setVisible(option != "Off")
+  private def actionBtn(label: String, icon: javafx.scene.Node, tip: String)(f: => Unit): Button =
+    val b = W.button(label, tip)(f)
+    b.setGraphic(icon)
+    b.setGraphicTextGap(5)
+    b
   private val buttons = W.hbox(
     6, compareButton,
-    W.button("⇢ img2img", "Send this image and its parameters to img2img")(withCurrent((p, t) => actions.sendTo(Mode.Img2Img, p, t))),
-    W.button("⇢ Inpaint", "Send this image and its parameters to Inpaint")(withCurrent((p, t) => actions.sendTo(Mode.Inpaint, p, t))),
-    W.button("Pano", "View this image as a 360° panorama in the Panorama tab")(withCurrent((p, _) => ctx.sendToPanorama(p))),
-    W.button("↺ Restore", "Restore the generation parameters of this image into the current tab")(withCurrent((_, t) =>
+    actionBtn("img2img", Icons.send(13), "Send this image and its parameters to img2img")(withCurrent((p, t) => actions.sendTo(Mode.Img2Img, p, t))),
+    actionBtn("Inpaint", Icons.brush(13), "Send this image and its parameters to Inpaint")(withCurrent((p, t) => actions.sendTo(Mode.Inpaint, p, t))),
+    actionBtn("Pano", Icons.globe(13), "View this image as a 360° panorama in the Panorama tab")(withCurrent((p, _) => ctx.sendToPanorama(p))),
+    actionBtn("Restore", Icons.restore(13), "Restore the generation parameters of this image into the current tab")(withCurrent((_, t) =>
       t match
         case Some(text) => actions.restore(text)
         case None       => ctx.info("This image has no generation parameters")
     )),
     W.spacer(),
-    W.iconButton("⧉", "Copy the image to the clipboard")(withCurrent((p, _) => { ImageActions.copyImage(ctx, p) })),
-    W.iconButton("▤", "Show in folder")(withCurrent((p, _) => ImageActions.openFolder(p))),
-    W.iconButton("🗑", "Delete this image (asks first)")(withCurrent((p, _) => actions.delete(p)))
+    W.vectorButton(Icons.copy(14), "Copy the image to the clipboard")(withCurrent((p, _) => { ImageActions.copyImage(ctx, p) })),
+    W.vectorButton(Icons.folder(14), "Show in folder")(withCurrent((p, _) => ImageActions.openFolder(p))),
+    W.vectorButton(Icons.trash(14), "Delete this image (asks first)")(withCurrent((p, _) => actions.delete(p)))
   )
   buttons.getStyleClass.add("preview-actions")
 
   private val compareActions = new javafx.scene.layout.FlowPane(6, 4,
-    W.button("Compare → A", "Use this image as comparison A")(withCurrent((p, _) => actions.compare(false, p))),
-    W.button("Compare → B", "Use this image as comparison B")(withCurrent((p, _) => actions.compare(true, p))))
+    W.button("Compare → A", "Use this image as comparison A", Seq("compact-button"))(withCurrent((p, _) => actions.compare(false, p))),
+    W.button("Compare → B", "Use this image as comparison B", Seq("compact-button"))(withCurrent((p, _) => actions.compare(true, p))))
   private val infoBox = new VBox(6, W.hbox(8, fileLabel), info, buttons, compareActions)
   infoBox.getStyleClass.add("info-box")
   infoBox.setPadding(new Insets(8, 10, 8, 10))
@@ -193,7 +204,7 @@ final class PreviewPane(ctx: UiContext, actions: ImageActions):
 
   def clear(): Unit =
     imageReads.invalidate()
-    empty.setText("✦\nGenerated images appear here\nCtrl+Enter to generate")
+    empty.setText("Generated images appear here\nCtrl+Enter to generate")
     shownGeneration += 1
     current = None
     zoom.setUserData(null)

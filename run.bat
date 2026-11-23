@@ -45,12 +45,15 @@ if not exist "%SDFX_JAR%" (
   )
 )
 
+set "SDFX_NATIVE_ACCESS="
+if %SDFX_MAJORN% GEQ 22 set "SDFX_NATIVE_ACCESS=--enable-native-access=ALL-UNNAMED"
+
 set "SDFX_MCP="
 for %%A in (%*) do if /i "%%~A"=="--mcp" set "SDFX_MCP=1"
 
 if defined SDFX_MCP (
   "%SDFX_JAVA%" -Xlog:disable -Xlog:all=warning:stderr -Djava.awt.headless=true -Dfile.encoding=UTF-8 -Xmx2g -Dsdfx.home="%~dp0." -cp "%SDFX_JAR%" sdfx.mcp.McpMain %*
 ) else (
-  "%SDFX_JAVA%" -Dprism.allowhidpi=true -Dfile.encoding=UTF-8 -Xmx2g -Dsdfx.home="%~dp0." -jar "%SDFX_JAR%" %*
+  "%SDFX_JAVA%" %SDFX_NATIVE_ACCESS% -Dprism.allowhidpi=true -Dfile.encoding=UTF-8 -Xmx2g -Dsdfx.home="%~dp0." -jar "%SDFX_JAR%" %*
 )
 exit /b %ERRORLEVEL%

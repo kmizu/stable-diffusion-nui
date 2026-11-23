@@ -8,6 +8,45 @@ object FastModePlugin:
   val Id = "fast_mode"
   val InfotextKey = "Fast mode"
 
+  /** PNG restore: `Fast mode` enables the plugin; any other PNG switches it off. Malformed or out-of-range values give `None`. */
+  def replay(fields: Map[String, String]): Option[Values] =
+    fields.get(InfotextKey) match
+      case None => Some(Values(Map("enabled" -> "false")))
+      case Some(raw) =>
+        val parts = raw.split(",").toSeq.map(_.trim).filter(_.nonEmpty)
+        if parts.isEmpty then None
+        else
+          var until: Option[Double] = None
+          var interval: Option[Int] = None
+          var order: Option[Int] = None
+          var gateStep: Option[Int] = None
+          var valid = true
+          parts.foreach { part =>
+            if part.startsWith("CFG until ") && until.isEmpty then
+              until = part.stripPrefix("CFG until ").trim.toDoubleOption.filter(v => java.lang.Double.isFinite(v) && v >= 0.3 && v <= 1.0)
+              if until.isEmpty then valid = false
+            else if part.startsWith("DeepCache interval ") && interval.isEmpty then
+              interval = part.stripPrefix("DeepCache interval ").trim.toIntOption.filter(v => v >= 0 && v <= 10)
+              if interval.isEmpty then valid = false
+            else if part.startsWith("TaylorSeer order ") && order.isEmpty then
+              order = part.stripPrefix("TaylorSeer order ").trim.toIntOption.filter(v => v >= 0 && v <= 2)
+              if order.isEmpty then valid = false
+            else if part.startsWith("T-GATE step ") && gateStep.isEmpty then
+              gateStep = part.stripPrefix("T-GATE step ").trim.toIntOption.filter(v => v >= 0 && v <= 50)
+              if gateStep.isEmpty then valid = false
+            else valid = false
+          }
+          if !valid || until.isEmpty || interval.isEmpty then None
+          else
+            val base = Values.defaults(new FastModePlugin().controls).map
+            Some(Values(base ++ Map(
+              "enabled" -> "true",
+              "guidance_until" -> Values.fmt(until.get),
+              "interval" -> interval.get.toString,
+              "order" -> order.getOrElse(0).toString,
+              "gate_step" -> gateStep.getOrElse(0).toString
+            )))
+
 /** One switch for the two training-free speed-ups that were measured on the scala-torch engine (docs/v0.24-verification.md):
   * DeepCache (the deep U-Net features are reused between steps) and guidance for the first part of the steps only (after that the
   * negative prompt is not computed). Built into NUI, not an A1111 extension port.

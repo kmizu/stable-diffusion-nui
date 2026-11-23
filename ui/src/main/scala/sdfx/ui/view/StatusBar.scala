@@ -10,18 +10,22 @@ import sdfx.ui.vm.{Outcome, ProgressState, ProgressVM}
 /** Bottom bar: Generate / Interrupt, Queue, progress of both passes, job status and the collapsible log. */
 final class StatusBar(progress: ProgressVM, generate: () => Unit, enqueue: () => Unit, interrupt: () => Unit,
     clearQueue: () => Unit, protection: javafx.scene.Node):
-  val generateBtn = new Button("▶  Generate")
+  private val playIcon = Icons.play(13)
+  private val stopIcon = Icons.stop(12)
+  val generateBtn = new Button("Generate", playIcon)
+  generateBtn.setGraphicTextGap(8)
   generateBtn.getStyleClass.add("generate-button")
   generateBtn.setDefaultButton(false)
   generateBtn.setOnAction(_ => if progress.get.running then interrupt() else generate())
   W.tip(generateBtn, "Generate (Ctrl+Enter). While running: interrupt (Esc)")
 
-  val queueBtn = new Button("＋ Queue")
+  val queueBtn = new Button("Queue", Icons.plus(13))
+  queueBtn.setGraphicTextGap(6)
   queueBtn.getStyleClass.add("queue-button")
   queueBtn.setOnAction(_ => enqueue())
   W.tip(queueBtn, "Add another job with the current settings to the queue (Ctrl+Shift+Enter)")
 
-  private val clearBtn = W.iconButton("⨯", "Remove all pending jobs from the queue")(clearQueue())
+  private val clearBtn = W.vectorButton(Icons.close(12), "Remove all pending jobs from the queue")(clearQueue())
 
   private val baseBar = new ProgressBar(0)
   private val hiresBar = new ProgressBar(0)
@@ -29,14 +33,15 @@ final class StatusBar(progress: ProgressVM, generate: () => Unit, enqueue: () =>
   hiresBar.getStyleClass.add("hires-bar")
   Seq(baseBar, hiresBar).foreach { b =>
     b.setMaxWidth(Double.MaxValue)
-    b.setPrefHeight(8)
+    b.setPrefHeight(7)
   }
   W.tip(baseBar, "Sampling progress (first pass)")
   W.tip(hiresBar, "Hires. fix progress (second pass)")
   private val stepText = W.label("", "step-text")
   private val statusText = W.label("Idle", "status-text")
 
-  val logToggle = new ToggleButton("☰ Log")
+  val logToggle = new ToggleButton("Log", Icons.terminal(14))
+  logToggle.setGraphicTextGap(6)
   logToggle.getStyleClass.add("log-toggle")
   W.tip(logToggle, "Show the engine and job log")
 
@@ -65,12 +70,14 @@ final class StatusBar(progress: ProgressVM, generate: () => Unit, enqueue: () =>
 
   private def render(s: ProgressState): Unit =
     if s.running then
-      generateBtn.setText("■  Interrupt")
+      generateBtn.setText("Interrupt")
+      generateBtn.setGraphic(stopIcon)
       if !generateBtn.getStyleClass.contains("running") then generateBtn.getStyleClass.add("running")
     else
-      generateBtn.setText("▶  Generate")
+      generateBtn.setText("Generate")
+      generateBtn.setGraphic(playIcon)
       generateBtn.getStyleClass.remove("running")
-    queueBtn.setText(if s.pendingCount > 0 then s"＋ Queue (${s.pendingCount})" else "＋ Queue")
+    queueBtn.setText(if s.pendingCount > 0 then s"Queue (${s.pendingCount})" else "Queue")
     clearBtn.setVisible(s.pendingCount > 0)
     clearBtn.setManaged(s.pendingCount > 0)
     baseBar.setProgress(if s.running || s.outcome.contains(Outcome.Finished) then s.base.fraction else 0)

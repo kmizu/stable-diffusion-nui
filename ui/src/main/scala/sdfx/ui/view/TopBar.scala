@@ -2,9 +2,9 @@ package sdfx.ui.view
 
 import javafx.geometry.{Insets, Pos}
 import javafx.scene.control.*
-import javafx.scene.layout.HBox
+import javafx.scene.layout.{HBox, Region}
 import sdfx.core.protocol.{MemoryInfo, ModelEntry}
-import sdfx.engine.EngineState
+import sdfx.engine.{EngineSelection, EngineState}
 import sdfx.ui.vm.ModelVM
 
 /** Checkpoint / VAE / clip skip selection, engine status and settings. */
@@ -15,17 +15,19 @@ final class TopBar(
     onVae: String => Unit,
     onRefresh: () => Unit,
     onRestart: () => Unit,
-    onSettings: () => Unit
+    onSettings: () => Unit,
+    onToggleTheme: () => Unit = () => ()
 ):
   // ---- checkpoint picker -------------------------------------------------------------------------------
   private val ckptName = W.label("", "picker-name")
   private val ckptBadge = W.label("", "badge")
+  private val ckptChevron = Icons.chevronDown(12)
   private val ckptBtn = new Button()
-  ckptBtn.setGraphic(W.hbox(8, ckptName, ckptBadge, W.label("▾", "picker-arrow")))
+  ckptBtn.setGraphic(W.hbox(8, ckptName, ckptBadge, W.spacer(), ckptChevron))
   ckptBtn.getStyleClass.add("picker")
-  ckptBtn.setMinWidth(260)
-  ckptBtn.setPrefWidth(340)
-  ckptBtn.setMaxWidth(460)
+  ckptBtn.setMinWidth(220)
+  ckptBtn.setPrefWidth(310)
+  ckptBtn.setMaxWidth(440)
   W.tip(ckptBtn, "Stable Diffusion checkpoint (click to search)")
 
   private val popup = new SearchPopup[ModelEntry](
@@ -54,12 +56,12 @@ final class TopBar(
   ctx.hiresPreferences.addListener((_, _, _) => refreshCheckpoint())
   refreshCheckpoint()
 
-  private val refreshBtn = W.iconButton("⟳", "Rescan model folders")(onRefresh())
+  private val refreshBtn = W.vectorButton(Icons.refresh(15), "Rescan model folders")(onRefresh())
 
   // ---- VAE / clip skip ---------------------------------------------------------------------------------
   private val vae = new ComboBox[String](ctx.catalog.vaes)
   vae.setValue(model.vae.get)
-  vae.setPrefWidth(190)
+  vae.setPrefWidth(175)
   W.tip(vae, "VAE: Automatic = the checkpoint's own VAE")
   private var syncing = false
   vae.valueProperty.addListener((_, _, v) =>
@@ -79,17 +81,24 @@ final class TopBar(
     finally syncing = false
   )
 
-  private val clip = W.intSpinner(model.clipSkip, 1, 12, 1, 70)
+  private val clip = W.intSpinner(model.clipSkip, 1, 12, 1, 68)
   W.tip(clip, "Clip skip: 1 = normal, 2 is common for anime models")
 
   // ---- engine status -----------------------------------------------------------------------------------
   private val chip = W.label("● Starting", "chip", "chip-starting")
-  private val restartBtn = W.button("⟲ Restart", "Restart the inference engine", Seq("danger-button"))(onRestart())
+  private val restartBtn = W.button("Restart", "Restart the inference engine", Seq("danger-button"))(onRestart())
+  restartBtn.setGraphic(Icons.refresh(13))
+  restartBtn.setGraphicTextGap(6)
   restartBtn.setVisible(false)
   restartBtn.setManaged(false)
   private val vram = W.label("", "vram")
   W.tip(vram, "GPU memory used by the engine (allocated / total)")
-  private val settingsBtn = W.iconButton("⚙", "Settings")(onSettings())
+  private val themeBtn = W.vectorButton(Icons.sun(15), "Switch between dark and light theme")(onToggleTheme())
+  themeBtn.setId("theme-toggle-btn")
+  def setTheme(theme: String): Unit =
+    themeBtn.setGraphic(if theme == "light" then Icons.moon(15) else Icons.sun(15))
+  setTheme(ctx.services.settings.theme)
+  private val settingsBtn = W.vectorButton(Icons.settings(15), "Settings")(onSettings())
   private val dryBadge = W.label("DRY RUN", "badge", "badge-dry")
   dryBadge.setVisible(ctx.services.dryRun)
   dryBadge.setManaged(ctx.services.dryRun)
@@ -97,15 +106,23 @@ final class TopBar(
 
   def setState(s: EngineState, loading: Option[String]): Unit =
     chip.getStyleClass.removeIf(_.startsWith("chip-"))
+    val native = EngineSelection.usesNativeBackend(ctx.services.settings)
     val (text, cls, tipText) = (s, loading) match
       case (EngineState.Crashed(msg), _) => ("● Engine crashed", "chip-crashed", msg)
       case (EngineState.Stopped, _)      => ("● Stopped", "chip-crashed", "The engine is not running")
-      case (EngineState.Starting, _)     => ("● Starting…", "chip-starting", "Starting the Python engine")
+      case (EngineState.Starting, _)     =>
+        ("● Starting…", "chip-starting", if native then "Starting scala-torch engine…" else "Starting the inference engine…")
       case (_, Some(what))               => (s"● Loading $what", "chip-busy", s"Loading $what")
       case (EngineState.Busy, _)         => ("● Busy", "chip-busy", "The engine is working")
       case (EngineState.Ready(h), _) =>
         val dev = if h.dryRun then "dry run" else h.device
-        (s"● Ready · $dev", "chip-ready", s"Engine ${h.engineVersion} · Python ${h.python} · torch ${h.torch.getOrElse("-")} · diffusers ${h.diffusers.getOrElse("-")}")
+        val shortDev = dev.stripPrefix("NVIDIA GeForce ").stripPrefix("NVIDIA ")
+        val tip =
+          if h.python.trim.isEmpty || h.engineVersion.toLowerCase(java.util.Locale.ROOT).contains("scala-torch") then
+            s"Engine ${h.engineVersion} · Native JVM (no Python) · $dev"
+          else
+            s"Engine ${h.engineVersion} · Python ${h.python} · torch ${h.torch.getOrElse("-")} · diffusers ${h.diffusers.getOrElse("-")}"
+        (s"● Ready · $shortDev", "chip-ready", tip)
     chip.setText(text)
     chip.getStyleClass.add(cls)
     W.tip(chip, tipText)
@@ -136,17 +153,30 @@ final class TopBar(
       W.tip(mcpChip, s"MCP HTTP server listening on $u (Streamable HTTP). Configure it in Settings › MCP.")
     }
 
+  private def sep(): Region =
+    val r = new Region()
+    r.getStyleClass.add("toolbar-sep")
+    r.setMinWidth(1)
+    r.setPrefWidth(1)
+    r.setMaxWidth(1)
+    r.setMinHeight(20)
+    r.setPrefHeight(20)
+    r.setMaxHeight(20)
+    r
+
   private val title = W.label("SDNUI", "app-title")
-  title.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE)
+  title.setMinWidth(Region.USE_PREF_SIZE)
 
   val node: HBox =
     val h = new HBox(
       8,
       title,
+      sep(),
       W.label("Checkpoint", "bar-label"),
       ckptBtn,
       W.button("Models…", "Browse model previews")(ctx.openModelBrowser("checkpoint", None)),
       refreshBtn,
+      sep(),
       W.label("VAE", "bar-label"),
       vae,
       W.label("Clip skip", "bar-label"),
@@ -157,9 +187,11 @@ final class TopBar(
       mcpChip,
       chip,
       restartBtn,
+      sep(),
+      themeBtn,
       settingsBtn
     )
     h.setAlignment(Pos.CENTER_LEFT)
     h.getStyleClass.add("top-bar")
-    h.setPadding(new Insets(8, 12, 8, 12))
+    h.setPadding(new Insets(8, 14, 8, 14))
     h

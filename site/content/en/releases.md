@@ -4,7 +4,17 @@ nav: Release notes
 description: What each release of Stable Diffusion NUI (formerly SDFX) added or changed, with the SHA-256 of each download.
 ---
 
-Each release can be downloaded from its GitHub release page. Every release bundles a Java runtime; Python and model files must be supplied separately.
+Each release can be downloaded from its GitHub release page. Every release bundles a Java runtime; model files must be supplied separately (packages since v0.11 default to the Python-less `scala-torch` engine).
+
+## v0.31
+
+Published 2026-11-23. [GitHub release page](https://github.com/kmizu/stable-diffusion-nui/releases/tag/v0.31)
+
+- **Python-less default runtime & pure-JVM dry-run**: `scala-torch` (`0.1.3-gh53`) is the default backend and `--dry-run` runs on a pure-JVM worker with zero Python required.
+- **Training-free paper speedups & Fast mode replay**: FlashAttention-2, DeepCache + TaylorSeer forecasting, T-GATE cross-attention caching, and Align Your Steps (AYS) schedules, plus Fast mode PNG parameter restore and MCP metadata inspection.
+- **Native desktop UI refresh**: collapsible left navigation sidebar, native Windows dark/light titlebar chrome, crisp vector icons, filled-track sliders, quick Fast mode toggle, and Extensions search/active filter.
+
+Extract **SDNUI-v0.31-windows-x64.zip** and run **SDNUI/SDNUI.exe**. SHA-256: `7251fa25326898b8f9b4967e7f90bb4042db4ffcd85cd650e7437ff4929b6ca5`
 
 ## v0.1
 

@@ -153,14 +153,18 @@ final class PromptEditor(ctx: UiContext, prompt: StringProperty, negative: Strin
         if !exists || overwrite then ctx.saveStyle(PromptStyle(name.trim, prompt.get, negative.get), overwrite)
     )
 
-  private val applyStyleButton = W.iconButton("⤓", "Apply the selected style to the prompts")(applyStyle())
+  private val applyStyleButton = W.vectorButton(Icons.check(14), "Apply the selected style to the prompts")(applyStyle())
   applyStyleButton.setId(s"$modeKey-apply-style")
-  private val saveStyleButton = W.iconButton("✎", "Save the current prompts as a style")(saveStyle())
+  private val saveStyleButton = W.vectorButton(Icons.save(14), "Save the current prompts as a style")(saveStyle())
   saveStyleButton.setId(s"$modeKey-save-style")
+
+  private val loraAddBtn = W.button("LoRA", "Insert a <lora:name:1> tag at the caret (searchable list)")(loraPopup.show(loraButtonAnchor))
+  loraAddBtn.setGraphic(Icons.plus(13))
+  loraAddBtn.setGraphicTextGap(4)
 
   val toolbar: javafx.scene.layout.HBox = W.hbox(
     6,
-    W.button("✚ LoRA", "Insert a <lora:name:1> tag at the caret (searchable list)")(loraPopup.show(loraButtonAnchor)),
+    loraAddBtn,
     W.button("Networks…", "Browse network previews")(openNetworks()),
     W.button("Tags…", "Configure tag, wildcard, extra network and chant suggestions")(ctx.tagDictionary.configure()),
     W.spacer(),

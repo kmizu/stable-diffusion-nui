@@ -115,7 +115,8 @@ Copy-Item -LiteralPath $jarPath -Destination (Join-Path $inputDir 'stable-diffus
 
 $jpackageArgs = @('--type', 'app-image', '--name', 'SDNUI', '--description', 'Stable Diffusion NUI', '--app-version', $Version,
     '--dest', $imageDest, '--input', $inputDir, '--main-jar', 'stable-diffusion-nui.jar', '--main-class', 'sdfx.ui.Launcher',
-    '--java-options', '-Dsdfx.home=$APPDIR\..', '--java-options', '-Dprism.allowhidpi=true', '--java-options', '-Xmx2g', '--java-options', '-Dfile.encoding=UTF-8')
+    '--java-options', '-Dsdfx.home=$APPDIR\..', '--java-options', '-Dprism.allowhidpi=true', '--java-options', '-Xmx2g', '--java-options', '-Dfile.encoding=UTF-8',
+    '--java-options', '--enable-native-access=ALL-UNNAMED')
 if ($PreferScalaTorch -or $NativeOnly) { $jpackageArgs += @('--java-options', '-Dsdfx.engine.backend=scala-torch') }
 & $jpackage @jpackageArgs
 if ($LASTEXITCODE -ne 0) { throw "jpackage failed (exit $LASTEXITCODE); staging retained at $run" }

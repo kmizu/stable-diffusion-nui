@@ -141,6 +141,19 @@ object NativeDryRunWorker:
                   "image" -> idx, "images" -> (batchSize * nIter), "batch_size" -> batchSize))
                 val file = outDir.resolve(f"dryrun-$idx%04d-${UUID.randomUUID().toString.take(8)}.png")
                 val img = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB)
+                val g2 = img.createGraphics()
+                try
+                  g2.setPaint(new java.awt.GradientPaint(0f, 0f, new java.awt.Color(28, 36, 54), w.toFloat, h.toFloat, new java.awt.Color(44, 68, 108)))
+                  g2.fillRect(0, 0, w, h)
+                  g2.setColor(new java.awt.Color(255, 255, 255, 28))
+                  val step = math.max(32, w / 8)
+                  var x = step
+                  while x < w do { g2.drawLine(x, 0, x, h); x += step }
+                  var y = step
+                  while y < h do { g2.drawLine(0, y, w, y); y += step }
+                  g2.setColor(new java.awt.Color(230, 236, 245, 200))
+                  g2.drawString(s"Dry-run ${w}x${h} (seed ${seed + idx})", 16, 28)
+                finally g2.dispose()
                 ImageIO.write(img, "png", file.toFile)
                 ujson.Obj("path" -> file.toAbsolutePath.toString, "width" -> w, "height" -> h, "seed" -> (seed + idx), "infotext" -> "Steps: 20")
               }

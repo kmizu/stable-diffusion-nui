@@ -11,7 +11,7 @@ for the assets actually published; the checks below do not assert publication.
 
 Extract `SDNUI-v0.1-windows-x64.zip` to a writable folder (for example, under your user profile), then run `SDNUI\SDNUI.exe`. The bundled Java runtime needs no separately installed Java. Keep the extracted directory together: `app`, `runtime`, `python`, and `models` sit next to the executable in the regular package. The native-only variant below omits `python` and includes `scala-torch` instead. The launcher defaults the app home to this extracted SDNUI directory, even if the current directory or `SDFX_HOME` points to another checkout. An explicit `--home DIR` overrides that default. Do not run directly inside the ZIP. A writable location is needed for settings and outputs.
 
-Python 3.10–3.12 is needed for the engine; Python and torch are not included. On the first normal launch, the setup dialog can create a virtual environment and download dependencies, or use a Python environment you choose. The torch download is large and uses the CUDA 12.8 wheel index. `SDNUI.exe --dry-run` exercises the UI with placeholder generation but still needs a working Python interpreter. NVIDIA GPU and appropriate drivers are recommended for real generation.
+Python 3.10–3.12 is only needed if you switch to the optional Python engine in Settings → Engine; the default `scala-torch` package starts with zero Python installation. `SDNUI.exe --dry-run` exercises the UI with a pure-JVM placeholder worker and needs neither Python nor a GPU. NVIDIA GPU and appropriate drivers are recommended for real generation.
 
 ### Optional scala-torch package (Python is not required at runtime)
 

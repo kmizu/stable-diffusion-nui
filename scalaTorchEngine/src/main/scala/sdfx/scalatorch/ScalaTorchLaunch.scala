@@ -120,8 +120,12 @@ object ScalaTorchLaunch:
       Option.when(paths.nonEmpty)(paths.map(_.toString).mkString(java.io.File.pathSeparator))
 
   def dryRunLaunch(home: sdfx.core.config.AppHome): EngineLaunch =
-    val javaExe=Path.of(sys.props("java.home"),"bin",exeName)
-    require(Files.isRegularFile(javaExe),"Java executable is missing for dry-run worker")
+    val bundled = (Seq(home.root.resolve("scala-torch")) ++ installScalaTorch.toSeq).distinct
+    val currentJava = Path.of(sys.props("java.home"), "bin", exeName)
+    val javaExe =
+      if Files.isRegularFile(currentJava) then currentJava
+      else discoverJava25(sys.env, bundled)
+    require(Files.isRegularFile(javaExe), "Java executable is missing for dry-run worker")
     val cp=managedClasspathEntries("sdfx/scalatorch/NativeDryRunWorker.class",classOf[sdfx.scalatorch.NativeDryRunWorker.type])
       .getOrElse(throw IllegalArgumentException("NativeDryRunWorker is missing from classpath"))
     val workdir=if Files.isDirectory(home.root) then home.root else Path.of(".").toAbsolutePath.normalize()

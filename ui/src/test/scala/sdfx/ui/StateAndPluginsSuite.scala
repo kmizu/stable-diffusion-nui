@@ -246,3 +246,21 @@ class StateAndPluginsSuite extends munit.FunSuite:
     assertEquals(o, CliOptions(dryRun = true, home = Some("X"), screenshot = Some("s.png"), exitAfter = Some(3.0), autogen = true, tab = Some("inpaint")))
     assert(CliOptions.parse(Seq("--mcp")).mcp)
   }
+
+  test("PluginsVM.restoreInfotext restores Fast Mode without duplicating DeepCache or T-GATE") {
+    val dc = new sdfx.plugins.DeepCachePlugin
+    val tg = new sdfx.plugins.TGatePlugin
+    val fm = new sdfx.plugins.FastModePlugin
+    val pv = new PluginsVM(Mode.Txt2Img, Nil, Seq(dc, tg, fm), _ => Values.empty)
+    val params = fm.process(GenerationParams(prompt = "cat", cfgScale = 7.0),
+      Values(Values.defaults(fm.controls).map ++ Map("enabled" -> "true", "order" -> "1", "gate_step" -> "8")))
+    val text = sdfx.core.infotext.Infotext.write(params, sdfx.core.infotext.ImageFacts(seed = 42L))
+    pv.restoreInfotext(text)
+    assertEquals(pv.form("fast_mode").get.values.str("enabled"), "true")
+    assertEquals(pv.form("fast_mode").get.values.str("order"), "1")
+    assertEquals(pv.form("fast_mode").get.values.str("gate_step"), "8")
+    assertEquals(pv.form("deepcache").get.values.str("enabled"), "false")
+    assertEquals(pv.form("tgate").get.values.str("enabled"), "false")
+    pv.restoreInfotext("cat\nSteps: 20, Seed: 4, Size: 512x512")
+    assertEquals(pv.form("fast_mode").get.values.str("enabled"), "false")
+  }

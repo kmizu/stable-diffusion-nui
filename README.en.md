@@ -8,9 +8,9 @@ Repository: [kmizu/stable-diffusion-nui](https://github.com/kmizu/stable-diffusi
 
 **Manual: <https://kmizu.github.io/stable-diffusion-nui/en/>** (Japanese: <https://kmizu.github.io/stable-diffusion-nui/>)
 
-![The native SDNUI window. Prompt and generation settings on the left; the generated image, a 20-image gallery and a ZIP save button on the right.](docs/images/sdnui-desktop.png)
+![The native SDNUI window. Navigation sidebar, prompt and generation settings on the left; generated image and gallery on the right.](docs/images/sdnui-desktop.png)
 
-*An actual SDNUI screen: the result of a batch of 4 images at a time x 5 runs.*
+*An actual SDNUI screen running SD1.5 (`animekawa_v10`) on the Python-less `scala-torch` engine.*
 
 ---
 
@@ -18,9 +18,9 @@ Repository: [kmizu/stable-diffusion-nui](https://github.com/kmizu/stable-diffusi
 
 A desktop app for Stable Diffusion that runs locally.
 
-- UI: Scala 3 + JavaFX 21 (the `ui` module)
+- UI: Scala 3 + JavaFX 21 (the `ui` module, with a collapsible navigation sidebar, dark/light themes, and Windows native title bar styling)
 - MCP server: lets AI agents call image generation (the `mcp` module)
-- Inference engine: Python + diffusers (`python/sdfx`). It is launched as a child process by the UI/MCP and communicates over stdin/stdout using JSON Lines
+- Inference engine: **Python-less `scala-torch` (default)** or Python + diffusers (`python/sdfx`), launched as a child process by UI/MCP over stdin/stdout JSON Lines
 - Build: sbt 2.0.12 + sbt-assembly (a single fat jar, `target/stable-diffusion-nui.jar`)
 
 It is self-contained in this folder. It does not depend on the parent directory's reForge.
