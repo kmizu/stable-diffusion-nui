@@ -6,7 +6,7 @@ import java.util.Base64
 import sdfx.core.infotext.Infotext
 import sdfx.core.plugins.api.{Control, Plugin, Values}
 import sdfx.core.png.PngMetadata
-import sdfx.plugins.{CompilePlugin, DeepCachePlugin, ClipIoPlugin, CnAnimationPlugin, AnimateDiffPlugin, BatchFaceSwapPlugin, AestheticScorePlugin, AestheticGradientsPlugin, LlulPlugin, OldSdFirstpasserPlugin, CorridorCrawlerPlugin, AgentAttentionPlugin, CdTunerPlugin, CharacteristicGuidancePlugin, IncantationsPlugin, ConditioningHighresFixPlugin, Img2ImgHiresFixPlugin, NsfwCheckerPlugin, SemanticGuidancePlugin, SonarPlugin, StandardPlugins, TokenDownsamplingPlugin}
+import sdfx.plugins.{CompilePlugin, DeepCachePlugin, TGatePlugin, ClipIoPlugin, CnAnimationPlugin, AnimateDiffPlugin, BatchFaceSwapPlugin, AestheticScorePlugin, AestheticGradientsPlugin, LlulPlugin, OldSdFirstpasserPlugin, CorridorCrawlerPlugin, AgentAttentionPlugin, CdTunerPlugin, CharacteristicGuidancePlugin, IncantationsPlugin, ConditioningHighresFixPlugin, Img2ImgHiresFixPlugin, NsfwCheckerPlugin, SemanticGuidancePlugin, SonarPlugin, StandardPlugins, TokenDownsamplingPlugin}
 import scala.util.control.NonFatal
 
 /** Inspect only: no model load, plugin execution, script execution or generation. */
@@ -161,6 +161,7 @@ object InspectGenerationMetadata:
       "clip_io" -> ClipIoPlugin.replay(f).filter(_ => ClipIoPlugin.InfotextKeys.exists(f.contains)),
       "compile" -> CompilePlugin.replay(f).filter(_ => f.contains(CompilePlugin.BackendKey)),
       "deepcache" -> DeepCachePlugin.replay(f).filter(_ => f.contains(DeepCachePlugin.IntervalKey)),
+      "tgate" -> TGatePlugin.replay(f).filter(_ => f.contains(TGatePlugin.GateStepKey)),
       "aesthetic_score" -> AestheticScorePlugin.replay(f).filter(_ => AestheticScorePlugin.TriggerKeys.exists(f.contains)),
       "batch_face_swap" -> BatchFaceSwapPlugin.replay(f).filter(_ => f.contains(BatchFaceSwapPlugin.InfotextKey)),
       "model_keyword" -> Option.when(f.contains("Model keyword settings") || f.get("Model keyword replay").exists(_.equalsIgnoreCase("true")))(Values(Map("enabled" -> "false")))

@@ -161,7 +161,13 @@ class PixelScrambleSuite extends munit.FunSuite with TempDir:
 
   tmp.test("Python and JVM exchange 16-bit RGB and RGBA PNGs without sample loss") { dir =>
     import scala.sys.process.*
-    val python = Paths.get("python", ".venv-test", "Scripts", "python.exe").toAbsolutePath.toString
+    val python = Seq(
+      Paths.get("python", ".venv-test", "Scripts", "python.exe"),
+      Paths.get("python", ".venv-smoke", "Scripts", "python.exe"),
+      Paths.get("python", ".venv-test", "bin", "python")
+    ).map(_.toAbsolutePath).find(Files.isExecutable(_)) match
+      case Some(p) => p.toString
+      case None => assume(false, "Python test environment with Pillow is not present"); ""
     val helper = Paths.get("python", "tests", "cross_runtime_png_helper.py").toAbsolutePath.toString
     def bridge(action: String, source: java.nio.file.Path, target: java.nio.file.Path): Unit =
       assertEquals(Process(Seq(python, helper, action, source.toString, target.toString)).!, 0)

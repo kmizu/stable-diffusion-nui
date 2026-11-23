@@ -38,8 +38,60 @@ object ScalaTorchLaunch:
 
   def requested(env: Map[String,String]=sys.env): Boolean=keys.exists(env.contains) ||
     sys.props.get("sdfx.engine.backend").exists(_.trim.equalsIgnoreCase("scala-torch"))
-  private def managedClasspathEntries(): Option[String] =
-    val resource="scalatorch/models/worker/NativeWorkerMain.class"
+
+  private def isJava25Home(dir: Path): Boolean =
+    val name=Option(dir.getFileName).map(_.toString).getOrElse("")
+    name.contains("25") || {
+      val rel=dir.resolve("release")
+      Files.isRegularFile(rel) && (try Files.readString(rel).contains("JAVA_VERSION=\"25") catch case _: Throwable => false)
+    }
+
+  private def resolveJavaExe(p: Path): Path =
+    if Files.isDirectory(p) then
+      Seq(p.resolve(exeName),p.resolve("bin").resolve(exeName),p.resolve("Contents/Home/bin").resolve(exeName))
+        .find(Files.isRegularFile(_)).getOrElse(p)
+    else p
+
+  private def discoverJava25(env: Map[String,String],bundled: Seq[Path]): Path =
+    bundled.map(_.resolve("jre/bin").resolve(exeName)).find(Files.isRegularFile(_))
+      .orElse {
+        Option.when(Runtime.version().feature()>=25)(Path.of(sys.props("java.home"),"bin",exeName))
+          .filter(Files.isRegularFile(_))
+      }
+      .orElse {
+        Seq("JAVA25_HOME","JAVA_HOME").flatMap(env.get).map(_.trim).filter(_.nonEmpty).flatMap { raw =>
+          val d=Path.of(raw).toAbsolutePath.normalize()
+          val exe=d.resolve("bin").resolve(exeName)
+          Option.when(Files.isRegularFile(exe) && isJava25Home(d))(exe)
+        }.headOption
+      }
+      .orElse {
+        val roots=Seq(
+          Path.of("C:\\dev\\Java"),
+          Path.of("C:\\Program Files\\Java"),
+          Path.of("C:\\Program Files\\Eclipse Adoptium"),
+          Path.of("/usr/lib/jvm"),
+          Path.of("/Library/Java/JavaVirtualMachines")
+        ).filter(Files.isDirectory(_))
+        roots.flatMap { root =>
+          val stream=Files.list(root)
+          try
+            stream.iterator().asScala.filter(Files.isDirectory(_)).toVector
+              .filter(d => d.getFileName.toString.contains("25"))
+              .sortBy(_.getFileName.toString)(Ordering[String].reverse)
+              .flatMap { d =>
+                val home=if Files.isDirectory(d.resolve("Contents/Home")) then d.resolve("Contents/Home") else d
+                val exe=home.resolve("bin").resolve(exeName)
+                Option.when(Files.isRegularFile(exe) && isJava25Home(home))(exe)
+              }
+          catch case _: Throwable => Vector.empty
+          finally stream.close()
+        }.headOption
+      }
+      .getOrElse(Path.of(sys.props("java.home"),"bin",exeName))
+
+  private def managedClasspathEntries(resource: String="scalatorch/models/worker/NativeWorkerMain.class",
+      anchorClass: Class[?]=classOf[ScalaTorchLaunchMarker]): Option[String] =
     val loader=Option(getClass.getClassLoader).getOrElse(ClassLoader.getSystemClassLoader)
     if loader.getResource(resource)==null then None
     else
@@ -50,6 +102,7 @@ object ScalaTorchLaunch:
             val p=Path.of(url.toURI).toAbsolutePath.normalize()
             if Files.exists(p) then paths+=p
           catch case _: Throwable => ()
+      Option(anchorClass.getProtectionDomain).flatMap(pd => Option(pd.getCodeSource)).foreach(cs => addUrl(cs.getLocation))
       var current: ClassLoader=loader
       while current!=null do
         current match
@@ -66,46 +119,55 @@ object ScalaTorchLaunch:
         }
       Option.when(paths.nonEmpty)(paths.map(_.toString).mkString(java.io.File.pathSeparator))
 
+  def dryRunLaunch(home: sdfx.core.config.AppHome): EngineLaunch =
+    val javaExe=Path.of(sys.props("java.home"),"bin",exeName)
+    require(Files.isRegularFile(javaExe),"Java executable is missing for dry-run worker")
+    val cp=managedClasspathEntries("sdfx/scalatorch/NativeDryRunWorker.class",classOf[sdfx.scalatorch.NativeDryRunWorker.type])
+      .getOrElse(throw IllegalArgumentException("NativeDryRunWorker is missing from classpath"))
+    val workdir=if Files.isDirectory(home.root) then home.root else Path.of(".").toAbsolutePath.normalize()
+    EngineLaunch(Seq(javaExe.toString,"-Djava.awt.headless=true","-cp",cp,"sdfx.scalatorch.NativeDryRunWorker"),
+      workdir,helloTimeout=15.seconds)
+
   def fromEnvironment(env: Map[String,String]=sys.env,appHome: Option[Path]=None): Option[EngineLaunch]=
     if !requested(env) then None
     else
-      def required(name: String): Path=
-        val value=env.getOrElse(name,"").trim
-        require(value.nonEmpty,s"native engine requires $name")
-        Path.of(value).toAbsolutePath.normalize()
       def configured(name: String,default: Option[Path]): Path=env.get(name) match
         case Some(value) =>
           require(value.trim.nonEmpty,s"native engine requires $name")
           Path.of(value.trim).toAbsolutePath.normalize()
         case None => default.filter(Files.exists(_)).map(_.toAbsolutePath.normalize()).getOrElse(
           throw IllegalArgumentException(s"native engine requires $name"))
-      val model=required("SDFX_SCALATORCH_MODEL")
+      val rawModel=env.getOrElse("SDFX_SCALATORCH_MODEL","").trim
+      require(rawModel.nonEmpty,"native engine requires SDFX_SCALATORCH_MODEL")
+      val idle=rawModel=="-"
+      val modelOpt=if idle then None else Some(Path.of(rawModel).toAbsolutePath.normalize())
       val bundled=appHome.toSeq.map(_.resolve("scala-torch")) ++ installScalaTorch.toSeq
       val defaultCpFile=bundled.map(_.resolve("worker-classpath.txt")).find(Files.exists(_))
       val explicitCpFile=if env.contains("SDFX_SCALATORCH_CLASSPATH_FILE") || defaultCpFile.nonEmpty then
         Some(configured("SDFX_SCALATORCH_CLASSPATH_FILE",defaultCpFile))
       else None
-      val singleFile=Files.isRegularFile(model) && Vector(".safetensors",".ckpt").exists(
-        model.getFileName.toString.toLowerCase(java.util.Locale.ROOT).endsWith)
-      val config=if singleFile && !env.contains("SDFX_SCALATORCH_SCHEDULER") then None else
-        Some(configured("SDFX_SCALATORCH_SCHEDULER",Some(model.resolve("scheduler/scheduler_config.json"))))
+      val singleFile=modelOpt.exists(model => Files.isRegularFile(model) && Vector(".safetensors",".ckpt").exists(
+        model.getFileName.toString.toLowerCase(java.util.Locale.ROOT).endsWith))
+      val config=if idle || (singleFile && !env.contains("SDFX_SCALATORCH_SCHEDULER")) then None else
+        Some(configured("SDFX_SCALATORCH_SCHEDULER",modelOpt.map(_.resolve("scheduler/scheduler_config.json"))))
       explicitCpFile.foreach { cpFile =>
         require(Files.isRegularFile(cpFile) && Files.size(cpFile)<=1048576,"native classpath file is missing or too large")
       }
-      require(Files.isDirectory(model) || singleFile,"native model directory or checkpoint file is missing")
+      modelOpt.foreach(model => require(Files.isDirectory(model) || singleFile,"native model directory or checkpoint file is missing"))
       require(config.forall(Files.isRegularFile(_)),"native scheduler config is missing")
       val tokenizer=if !singleFile then None else
         val explicit=env.get("SDFX_SCALATORCH_TOKENIZER").map { value =>
           require(value.trim.nonEmpty,"native tokenizer path is empty")
           Path.of(value.trim).toAbsolutePath.normalize()
         }
-        val candidates=explicit.toSeq ++ bundled.map(_.resolve("tokenizer")) ++
-          Seq(model.getParent.resolve("tokenizer"))
-        val selected=candidates.find(path => Files.isRegularFile(path.resolve("vocab.json")) &&
-          Files.isRegularFile(path.resolve("merges.txt")))
-        require(selected.nonEmpty,"single-file SD1 requires tokenizer/vocab.json and tokenizer/merges.txt")
-        require(explicit.isEmpty || selected.contains(explicit.get),"configured native tokenizer is missing vocabulary or merges")
-        selected
+        explicit.foreach { p =>
+          require(Files.isRegularFile(p.resolve("vocab.json")) && Files.isRegularFile(p.resolve("merges.txt")),
+            "configured native tokenizer is missing vocabulary or merges")
+        }
+        explicit.orElse {
+          val candidates=bundled.map(_.resolve("tokenizer")) ++ modelOpt.map(_.getParent.resolve("tokenizer")).toSeq
+          candidates.find(path => Files.isRegularFile(path.resolve("vocab.json")) && Files.isRegularFile(path.resolve("merges.txt")))
+        }
       val classpathEntries=explicitCpFile match
         case Some(cpFile) =>
           val classpath=Files.readString(cpFile).trim
@@ -120,20 +182,17 @@ object ScalaTorchLaunch:
         case None =>
           managedClasspathEntries().getOrElse(
             throw IllegalArgumentException("native engine requires SDFX_SCALATORCH_CLASSPATH_FILE or scala-torch-models on the classpath"))
-      val bundledJava=bundled.map(_.resolve("jre/bin").resolve(exeName)).find(Files.isRegularFile(_))
       val javaExe=env.get("SDFX_SCALATORCH_JAVA").map { value =>
         require(value.trim.nonEmpty,"native engine requires SDFX_SCALATORCH_JAVA")
-        val p=Path.of(value.trim).toAbsolutePath.normalize()
-        // a folder (for example a JAVA_HOME or its bin) is accepted by looking for the executable inside it
-        if Files.isDirectory(p) then
-          Seq(p.resolve(exeName),p.resolve("bin").resolve(exeName)).find(Files.isRegularFile(_)).getOrElse(p)
-        else p
-      }.orElse(bundledJava).getOrElse(
-        Path.of(sys.props("java.home"),"bin",if sys.props("os.name").startsWith("Windows") then "java.exe" else "java"))
+        resolveJavaExe(Path.of(value.trim).toAbsolutePath.normalize())
+      }.getOrElse(discoverJava25(env,bundled))
       require(Files.isRegularFile(javaExe),"native Java executable is missing (Java 25 required)")
+      val workdir=modelOpt.map(m => if singleFile then m.getParent else m)
+        .orElse(appHome.map(_.toAbsolutePath.normalize()).filter(Files.isDirectory(_)))
+        .getOrElse(Path.of(".").toAbsolutePath.normalize())
       Some(EngineLaunch(Seq(javaExe.toString,"-XX:MaxRAMPercentage=50.0","--enable-native-access=ALL-UNNAMED","-cp",classpathEntries,
-        "scalatorch.models.worker.NativeWorkerMain",model.toString,config.fold("-")(_.toString)),
-        if singleFile then model.getParent else model,
+        "scalatorch.models.worker.NativeWorkerMain",modelOpt.fold("-")(_.toString),config.fold("-")(_.toString)),
+        workdir,
         env=env.filter((key,_) => key.startsWith("SDFX_SCALATORCH_") || key.startsWith("SCALATORCH_")) ++
           tokenizer.map(path => "SDFX_SCALATORCH_TOKENIZER" -> path.toString),helloTimeout=30.seconds))
 
@@ -151,13 +210,10 @@ final class ScalaTorchBackendProvider extends EngineBackendProvider:
         case _ => ScalaTorchLaunch.requested(environment)
   def launch(home: sdfx.core.config.AppHome,settings: sdfx.core.config.Settings,dryRun: Boolean,
     environment: Map[String,String]): EngineLaunch =
-    require(!dryRun,"Scala native engine does not implement dry-run mode")
+    if dryRun then return ScalaTorchLaunch.dryRunLaunch(home)
     def device(value: String): String =
       if value != "auto" then value else if ScalaTorchLaunch.cudaAvailable then "cuda" else "cpu"
-    val model=settings.scalaTorchModel.orElse(ScalaTorchLaunch.defaultModel(settings,Some(home.root)))
-    if model.isEmpty && !environment.contains("SDFX_SCALATORCH_MODEL") then
-      throw new IllegalArgumentException("No checkpoint found for the scala-torch engine. Add a model folder in Settings > Model folders " +
-        "(or copy a .safetensors checkpoint into " + home.root.resolve("models").resolve("Stable-diffusion") + "), then press Restart.")
+    val model=settings.scalaTorchModel.orElse(ScalaTorchLaunch.defaultModel(settings,Some(home.root))).orElse(Some("-"))
     val saved=Seq(
       "SDFX_SCALATORCH_CLASSPATH_FILE"->settings.scalaTorchClasspath,
       "SDFX_SCALATORCH_MODEL"->model,

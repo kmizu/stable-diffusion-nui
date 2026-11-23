@@ -4,9 +4,22 @@ set -u
 cd "$(dirname "$0")" || exit 1
 HOME_DIR="$(pwd)"
 
-if [ -n "${JAVA_HOME:-}" ] && [ -x "$JAVA_HOME/bin/java" ]; then JAVA="$JAVA_HOME/bin/java"
-elif command -v java >/dev/null 2>&1; then JAVA="$(command -v java)"
-else echo "[sdfx] Java 17 or newer was not found. Install a JDK 17+ and set JAVA_HOME or add java to PATH." >&2; exit 1; fi
+JAVA=""
+if [ -n "${SDFX_SCALATORCH_JAVA:-}" ] && [ -x "$SDFX_SCALATORCH_JAVA" ]; then JAVA="$SDFX_SCALATORCH_JAVA"
+elif [ -n "${JAVA25_HOME:-}" ] && [ -x "$JAVA25_HOME/bin/java" ]; then JAVA="$JAVA25_HOME/bin/java"
+elif [ -n "${JAVA_HOME:-}" ] && [ -x "$JAVA_HOME/bin/java" ]; then
+  case "$JAVA_HOME" in *25*) JAVA="$JAVA_HOME/bin/java";; esac
+fi
+if [ -z "$JAVA" ]; then
+  for d in /usr/lib/jvm/*25* /Library/Java/JavaVirtualMachines/*25*/Contents/Home; do
+    if [ -x "$d/bin/java" ]; then JAVA="$d/bin/java"; break; fi
+  done
+fi
+if [ -z "$JAVA" ]; then
+  if [ -n "${JAVA_HOME:-}" ] && [ -x "$JAVA_HOME/bin/java" ]; then JAVA="$JAVA_HOME/bin/java"
+  elif command -v java >/dev/null 2>&1; then JAVA="$(command -v java)"
+  else echo "[sdfx] Java 17 or newer was not found. Install a JDK 17+ and set JAVA_HOME or add java to PATH." >&2; exit 1; fi
+fi
 
 VER="$("$JAVA" -version 2>&1 | sed -n 's/.*version "\([^"]*\)".*/\1/p' | head -n1)"
 MAJOR="${VER%%.*}"

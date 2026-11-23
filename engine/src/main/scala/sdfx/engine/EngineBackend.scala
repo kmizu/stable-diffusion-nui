@@ -12,7 +12,8 @@ private[engine] object EngineBackend:
   private lazy val providers=java.util.ServiceLoader.load(classOf[EngineBackendProvider]).iterator().asScala.toVector
   def availableProviders: Vector[String] = providers.map(_.name).distinct.sorted
   def defaultProvider: String =
-    if availableProviders.contains("python") then "python"
+    if availableProviders.contains("scala-torch") then "scala-torch"
+    else if availableProviders.contains("python") then "python"
     else if availableProviders.size==1 then availableProviders.head
     else throw new IllegalArgumentException("no unambiguous default engine backend is installed")
   private def backend(value: EngineBackendProvider): EngineBackend = new EngineBackend:
@@ -25,6 +26,7 @@ private[engine] object EngineBackend:
   /** Backend modules are discovered through the generic provider SPI. */
   def select(home: AppHome,settings: Settings,dryRun: Boolean,environment: Map[String,String]=sys.env): EngineBackend =
     environment.get("SDFX_ENGINE_BACKEND").orElse(sys.props.get("sdfx.engine.backend"))
+      .orElse(Option.when(settings.engineBackend.trim.nonEmpty && !settings.engineBackend.trim.equalsIgnoreCase("auto"))(settings.engineBackend))
       .map(_.trim.toLowerCase(java.util.Locale.ROOT)) match
       case Some("python") => provider("python")
       case Some("scala-torch") => provider("scala-torch")

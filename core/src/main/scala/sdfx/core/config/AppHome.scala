@@ -21,7 +21,11 @@ final case class AppHome(root: Path):
 object AppHome:
   /** Keep legacy settings keys and folder support when discovering the renamed application. */
   def detect(): AppHome =
-    def valid(p: Path) = Files.isDirectory(p.resolve("python").resolve("sdfx"))
+    def valid(p: Path) =
+      Files.isDirectory(p.resolve("scala-torch")) ||
+      Files.isRegularFile(p.resolve("config").resolve("settings.json")) ||
+      Files.isRegularFile(p.resolve("build.sbt")) ||
+      Files.isDirectory(p.resolve("python").resolve("sdfx"))
     val candidates = Seq(
       Option(System.getProperty("sdfx.home")).map(Paths.get(_)),
       Option(System.getenv("SDFX_HOME")).map(Paths.get(_)),

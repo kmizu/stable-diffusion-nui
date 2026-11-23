@@ -8,7 +8,8 @@ object DeepCachePlugin:
   val IntervalKey = "DeepCache interval"
   val BranchKey = "DeepCache branch"
   val FirstKey = "DeepCache full first"
-  val InfotextKeys: Seq[String] = Seq(IntervalKey, BranchKey, FirstKey)
+  val OrderKey = "DeepCache order"
+  val InfotextKeys: Seq[String] = Seq(IntervalKey, BranchKey, FirstKey, OrderKey)
 
   private def inRange(raw: String, low: Int, high: Int): Option[String] =
     raw.trim.toIntOption.filter(n => n >= low && n <= high).map(_.toString)
@@ -20,11 +21,12 @@ object DeepCachePlugin:
       val interval = inRange(fields(IntervalKey), 2, 10)
       val branch = fields.get(BranchKey).map(inRange(_, 0, 3))
       val first = fields.get(FirstKey).map(inRange(_, 0, 50))
-      if interval.isEmpty || branch.contains(None) || first.contains(None) then None
+      val order = fields.get(OrderKey).map(inRange(_, 0, 2))
+      if interval.isEmpty || branch.contains(None) || first.contains(None) || order.contains(None) then None
       else
         val base = Values.defaults(new DeepCachePlugin().controls).map
         Some(Values(base ++ Map("enabled" -> "true", "interval" -> interval.get) ++ branch.flatten.map("branch" -> _) ++
-          first.flatten.map("full_first" -> _)))
+          first.flatten.map("full_first" -> _) ++ order.flatten.map("order" -> _)))
 
 /** DeepCache for the U-Net: recompute only the shallow blocks on most steps and reuse the deep features recorded by the
   * last full step. Built into the engine (low-VRAM / speed options, #143), not an A1111 extension port.
@@ -43,10 +45,16 @@ class DeepCachePlugin extends HookPlugin:
     Check("enabled", "Enabled"),
     IntField("interval", "Full step every N steps", 2, 10, 3),
     IntField("branch", "Cache depth (0 = shallowest, fastest)", 0, 3, 0),
-    IntField("full_first", "Full steps at the start (they decide the composition)", 0, 50, 5))
+    IntField("full_first", "Full steps at the start (they decide the composition)", 0, 50, 5),
+    IntField("order", "TaylorSeer forecast order (0 = reuse, 1 = linear, 2 = quadratic)", 0, 2, 0))
 
   def hookFields(v: Values): ujson.Obj =
-    ujson.Obj("interval" -> v.int("interval", 3), "branch" -> v.int("branch", 0), "full_first" -> v.int("full_first", 5))
+    val order = v.int("order", 0)
+    val base = ujson.Obj("interval" -> v.int("interval", 3), "branch" -> v.int("branch", 0), "full_first" -> v.int("full_first", 5))
+    if order > 0 then base("order") = order
+    base
 
   def infotextKeys(o: ujson.Obj): Seq[(String, String)] =
-    Seq(IntervalKey -> field(o, "interval"), BranchKey -> field(o, "branch"), FirstKey -> field(o, "full_first"))
+    val base = Seq(IntervalKey -> field(o, "interval"), BranchKey -> field(o, "branch"), FirstKey -> field(o, "full_first"))
+    val orderOpt = o.value.get("order").flatMap(_.numOpt).map(_.toInt).filter(_ > 0)
+    base ++ orderOpt.map(ord => OrderKey -> ord.toString)

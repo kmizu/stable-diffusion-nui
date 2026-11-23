@@ -17,22 +17,26 @@ class ScalaTorchLaunchSuite extends munit.FunSuite:
     assertEquals(launch.command.takeRight(2),Seq(checkpoint.toString,"-"))
     assertEquals(launch.env.get("SDFX_SCALATORCH_TOKENIZER"),Some(tokenizer.toString))
   }
-  test("engine selection is isolated behind one backend and preserves Python default/legacy opt-in") {
+  test("engine selection defaults to scala-torch while preserving explicit python opt-in") {
     val home=sdfx.core.config.AppHome(Files.createTempDirectory("engine backend"))
     try
       val settings=sdfx.core.config.Settings()
       val pythonAvailable=EngineSelection.availableBackends.contains("python")
-      assertEquals(EngineSelection.usesNativeBackend(settings,Map.empty),!pythonAvailable)
+      assertEquals(EngineSelection.usesNativeBackend(settings,Map.empty),true)
       assert(EngineSelection.usesNativeBackend(settings,Map("SDFX_ENGINE_BACKEND"->" scala-torch ")))
       assert(EngineSelection.usesNativeBackend(settings,Map("SDFX_SCALATORCH_MODEL"->"")))
       assert(EngineSelection.usesNativeBackend(settings.copy(engineBackend="scala-torch"),Map.empty))
-      assertEquals(EngineBackend.select(home,settings,false,Map.empty).name,if pythonAvailable then "python" else "scala-torch")
+      assert(!EngineSelection.usesNativeBackend(settings.copy(engineBackend="python"),Map.empty))
+      assert(!EngineSelection.usesNativeBackend(settings,Map("SDFX_ENGINE_BACKEND"->" PYTHON ")))
+      assertEquals(EngineBackend.select(home,settings,false,Map.empty).name,"scala-torch")
       if pythonAvailable then
         assertEquals(EngineBackend.select(home,settings,false,Map("SDFX_ENGINE_BACKEND"->" PYTHON ")).name,"python")
       else intercept[IllegalArgumentException](EngineBackend.select(home,settings,false,Map("SDFX_ENGINE_BACKEND"->" PYTHON ")))
       intercept[IllegalArgumentException](EngineBackend.launch(home,settings,false,Map("SDFX_ENGINE_BACKEND"->"mystery")))
-      intercept[IllegalArgumentException](EngineBackend.launch(home,settings,true,Map("SDFX_ENGINE_BACKEND"->"scala-torch")))
-      intercept[IllegalArgumentException](EngineBackend.launch(home,settings,false,Map("SDFX_ENGINE_BACKEND"->"scala-torch")))
+      val dryLaunch=EngineBackend.launch(home,settings,true,Map("SDFX_ENGINE_BACKEND"->"scala-torch"))
+      assert(dryLaunch.command.contains("sdfx.scalatorch.NativeDryRunWorker"))
+      val idleLaunch=EngineBackend.launch(home,settings,false,Map("SDFX_ENGINE_BACKEND"->"scala-torch"))
+      assertEquals(idleLaunch.command.takeRight(2),Seq("-","-"))
       intercept[IllegalArgumentException](EngineBackend.launch(home,settings,false,Map("SDFX_SCALATORCH_MODEL"->"")))
     finally
       val files=Files.walk(home.root)
@@ -142,8 +146,15 @@ class ScalaTorchLaunchSuite extends munit.FunSuite:
     val exe=Files.write(bin.resolve(if sys.props("os.name").startsWith("Windows") then "java.exe" else "java"),Array[Byte](1))
     val l3=EngineBackend.launch(home,settings(None),false,Map("SDFX_SCALATORCH_JAVA"->bin.toString))
     assertEquals(l3.command.head,exe.toAbsolutePath.normalize.toString)
-    // no checkpoint anywhere -> a clear failure
-    intercept[IllegalArgumentException](EngineBackend.launch(home,sdfx.core.config.Settings(engineBackend="scala-torch"),false,Map.empty))
+    // single-file checkpoint without an on-disk tokenizer falls back to the bundled tokenizer on classpath
+    Files.deleteIfExists(tok.resolve("vocab.json"))
+    Files.deleteIfExists(tok.resolve("merges.txt"))
+    val noDiskTok=EngineBackend.launch(home,settings(None),false,Map.empty)
+    assert(noDiskTok.command.takeRight(2).head.endsWith("a-first.safetensors"))
+    assert(!noDiskTok.env.contains("SDFX_SCALATORCH_TOKENIZER"))
+    // no checkpoint anywhere -> starts idle ("-")
+    val noModel=EngineBackend.launch(home,sdfx.core.config.Settings(engineBackend="scala-torch"),false,Map.empty)
+    assertEquals(noModel.command.takeRight(2),Seq("-","-"))
   }
   test("CUDA memory budgets default to auto (free device memory) and an explicit value wins") {
     val temp=Files.createTempDirectory("native budget")
