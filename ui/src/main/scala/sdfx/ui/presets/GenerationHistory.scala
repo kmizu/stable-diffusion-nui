@@ -66,6 +66,12 @@ private object ImportedHistoryPreview:
 /** Automatic, capped per-mode generation history kept apart from the manual named-state library. */
 object GenerationHistory:
   val DefaultLimit = 50
+  /** Storage limits for automatic per-mode history (3 modes × 50 entries + favourites, ~600+ plugin fields per entry). */
+  val StorageLimits: PresetLimits = PresetLimits(
+    maxBytes = 32 * 1024 * 1024,
+    maxNodes = 2500000,
+    maxCollections = 6
+  )
   private val namedKey = "sdfxHistoryExplicitName"
   private val namedValue = PresetJson.readSource("true".getBytes(UTF_8), PresetLimits()).toOption.get
   private def isExplicitlyNamed(record: PresetRecord): Boolean =
@@ -245,7 +251,7 @@ private object HistoryOperationLocks:
 /** Disk side of the history: one JSON library plus 100px thumbnails, all on one I/O thread. */
 final class GenerationHistoryStore(directory: Path, limit: Int, dispatch: (() => Unit) => Unit):
   private val root = directory.toAbsolutePath.normalize()
-  private val store = new PresetStore(root, PresetLimits(maxCollections = 6))
+  private val store = new PresetStore(root, GenerationHistory.StorageLimits)
   private val thumbs = root.resolve("thumbs")
   private val flag = root.resolve("autosave.off")
   private val io = Executors.newSingleThreadExecutor((task => {

@@ -30,7 +30,7 @@ final class NativePresetsSession private[ui] (
 
   private val root = directory.toAbsolutePath.normalize()
   private val limits = PresetLimits()
-  private lazy val store = new PresetStore(root, limits)
+  private lazy val store = new PresetStore(root, NativePresetsSession.StorageLimits)
   private val gate = new Object
   private val io = Executors.newSingleThreadExecutor((task => {
     val thread = new Thread(task, "sdfx-native-presets-io")
@@ -297,3 +297,10 @@ final class NativePresetsSession private[ui] (
         pending = false
         io.shutdown()
     }
+
+object NativePresetsSession:
+  /** Storage limits for saved named states / native preset libraries containing all plugin fields. */
+  val StorageLimits: PresetLimits = PresetLimits(
+    maxBytes = 32 * 1024 * 1024,
+    maxNodes = 2500000
+  )
