@@ -6,6 +6,29 @@ description: What each release of Stable Diffusion NUI (formerly SDFX) added or 
 
 Each release can be downloaded from its GitHub release page. Every release bundles a Java runtime; model files must be supplied separately (packages since v0.11 default to the Python-less `scala-torch` engine).
 
+## v0.33
+
+Published 2026-11-25. [GitHub release page](https://github.com/kmizu/stable-diffusion-nui/releases/tag/v0.33)
+
+- **Redesigned SDNUI monogram favicon & app icons**: Updated to a crisp geometric "N" diffusion-prism monogram across web manual icons (including root `/favicon.ico`, `assets/favicon.svg`, and PWA/touch PNGs), all JavaFX stages (including fullscreen `PanoramaTab`), and the `SDNUI.exe` PE icon.
+- **`scala-torch 0.1.5` GPU kernels (from Maven Central, enabled by default)**:
+  - **FlashAttention-2 32×32 dispatch fix** for SDXL 1024×1024 / SD1.5 512×512 self-attention.
+  - **SageAttention + SpargeAttn** (default ON) for high-resolution attention (`qt, kt >= 2048`) with channel-smoothed INT8 `QK^T` and online warp-skipping.
+  - **Dynamic W8A8 INT8 FFN + fused GEGLU** (default ON) restricted strictly to large FFN projections (`M >= 1024`, `M*N*K >= 8e9`).
+- **Limited Interval CFG & extended formal AYS**: Exposed `active_start` in `CFG Schedule` and `guidance_from = 0.10` in `Fast mode` (with full backwards-compatible infotext replay), plus formal Align Your Steps schedules for `DPM++ 2M` (zero terminal sigma) and `Euler a` alongside `DPM++ 2M SDE`.
+- **Quality-first exclusion**: Visual-checked candidates that introduced blurring or artifacts (`DaTo 2×2` token pruning, `Bottleneck Sampling`) were excluded cleanly ([v0.33 speedup verification](https://github.com/kmizu/stable-diffusion-nui/blob/main/docs/v0.33-speedup-verification.md)).
+
+Extract **SDNUI-v0.33-windows-x64.zip** and run **SDNUI/SDNUI.exe**. SHA-256: `c26485b6c18ee5412f4fd00b35675a0b102305fb81ca801b6f120599f74dc9e6`
+
+## v0.32
+
+Published 2026-11-23. [GitHub release page](https://github.com/kmizu/stable-diffusion-nui/releases/tag/v0.32)
+
+- **Training-free speedups (`scala-torch 0.1.4`)**: Added HiCache scaled-Hermite DeepCache contraction, FasterCache CFG-Cache with adaptive/high-frequency gating, PostDiff progressive resolution diffusion, and refreshed `Fast mode` defaults.
+- **UI & Python-less parity**: Added click-to-enlarge image lightbox modal, pure-JVM native NudeNet NSFW mosaic censoring (`ONNX Runtime`), and raised history/preset JSON limits.
+
+Extract **SDNUI-v0.32-windows-x64.zip** and run **SDNUI/SDNUI.exe**. SHA-256: `67f9ef9ec993e333f9e7303ffc7e97fc11f643e02aacfb48cd62ff66405c2a1d`
+
 ## v0.31
 
 Published 2026-11-23. [GitHub release page](https://github.com/kmizu/stable-diffusion-nui/releases/tag/v0.31)

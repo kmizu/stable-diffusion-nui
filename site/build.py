@@ -124,6 +124,7 @@ def main():
     for child in out.iterdir():
         shutil.rmtree(child) if child.is_dir() else child.unlink()
     shutil.copytree(SITE / "assets", out / "assets")
+    shutil.copy2(SITE / "assets" / "favicon.ico", out / "favicon.ico")
     layout = (SITE / "templates" / "layout.html").read_text(encoding="utf-8")
     pages = {}
     for lang in ("ja", "en"):

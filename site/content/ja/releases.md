@@ -6,6 +6,29 @@ description: Stable Diffusion NUI（旧 SDFX）の各リリースで追加・変
 
 各リリースの配布ファイルは GitHub のリリースページからダウンロードできます。どの版も Java ランタイムを同梱していますが、モデルファイルは別に用意する必要があります（v0.11 以降は Python なしの `scala-torch` が標準です）。
 
+## v0.33
+
+2026-11-25 公開。[GitHub のリリースページ](https://github.com/kmizu/stable-diffusion-nui/releases/tag/v0.33)
+
+- **SDNUI モノグラムファビコン・アプリアイコン刷新**: 幾何学「N」ディフュージョンプリズム＋スパークデザインへ刷新し、Web マニュアル（ルート `/favicon.ico`・`assets/favicon.svg`・PWA アイコン）、JavaFX 全ウィンドウ（フルスクリーン `PanoramaTab` を含む）、`SDNUI.exe` 埋め込みアイコンを統一しました。
+- **`scala-torch 0.1.5` 高速化カーネル（Maven Central 公開版・既定有効）**:
+  - **FlashAttention-2 32×32 ディスパッチ修正**: SDXL 1024×1024 / SD1.5 512×512 self-attention のマルチワープ化。
+  - **SageAttention + SpargeAttn（既定 ON）**: K チャネル平均平滑化 + INT8 `QK^T` + オンライン warp スキップを高解像度アテンション（`qt, kt >= 2048`）へ自動適用。
+  - **動的 W8A8 INT8 FFN Linear + Fused GEGLU（既定 ON）**: `CUBLAS_COMPUTE_32I` を大規模 FFN 層（`M >= 1024`, `M*N*K >= 8e9`）に限定適用し、画質を損なわず演算量を削減。
+- **Limited Interval CFG & 正式版 AYS 拡張**: `CFG Schedule`（`active_start`）と `Fast mode`（既定 `guidance_from = 0.10`、既存インフォテキスト後方互換）へ Limited Interval CFG を搭載し、`Align Your Steps` を `DPM++ 2M SDE` に加えて `DPM++ 2M`（zero terminal sigma）および `Euler a` にも対応させました。
+- **画質優先ポリシーによる除外**: 実機目視で滲みや局所ノイズが出た `DaTo (2×2)` と `Bottleneck Sampling` は収録を見送り、鮮明さを保つ手法のみ搭載しています（[v0.33 の検証記録](https://github.com/kmizu/stable-diffusion-nui/blob/main/docs/v0.33-speedup-verification.md)）。
+
+**SDNUI-v0.33-windows-x64.zip** を展開し、**SDNUI/SDNUI.exe** を起動してください。SHA-256: `c26485b6c18ee5412f4fd00b35675a0b102305fb81ca801b6f120599f74dc9e6`
+
+## v0.32
+
+2026-11-23 公開。[GitHub のリリースページ](https://github.com/kmizu/stable-diffusion-nui/releases/tag/v0.32)
+
+- **推論高速化（`scala-torch 0.1.4`）**: HiCache 収縮係数、FasterCache CFG-Cache + 高周波強調、PostDiff 段階的解像度拡散を追加し、`Fast mode` デフォルトを刷新しました。
+- **UI・脱 Python 改善**: 画像クリック拡大ライトボックス、モザイク自動検閲（NudeNet）の純 JVM ネイティブ移植、生成履歴・プリセット保存上限の引き上げを行いました。
+
+**SDNUI-v0.32-windows-x64.zip** を展開し、**SDNUI/SDNUI.exe** を起動してください。SHA-256: `67f9ef9ec993e333f9e7303ffc7e97fc11f643e02aacfb48cd62ff66405c2a1d`
+
 ## v0.31
 
 2026-11-23 公開。[GitHub のリリースページ](https://github.com/kmizu/stable-diffusion-nui/releases/tag/v0.31)

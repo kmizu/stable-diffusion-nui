@@ -624,6 +624,7 @@ final class PanoramaTab(ctx: UiContext, saveDir: () => Path):
     val big = new PanoramaViewport(model)
     big.setId("panorama-fullscreen-viewport")
     val stage = new Stage()
+    AppIcon.apply(stage)
     stage.initOwner(ctx.stage)
     stage.setTitle("Panorama")
     val hint = new Label("Drag to look around, wheel to zoom, Esc to leave")
