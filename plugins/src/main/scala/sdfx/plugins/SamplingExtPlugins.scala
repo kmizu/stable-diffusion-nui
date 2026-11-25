@@ -177,13 +177,18 @@ class CfgSchedulePlugin extends HookPlugin:
     Slider("end_cfg", "CFG at end", 0, 30, 0.5, 3.0),
     Choice("curve", "Curve", Seq("linear", "cosine", "square", "sqrt"), "linear"),
     Slider("start", "Begin changing at", 0, 1, 0.01, 0.0),
-    Slider("end", "Finish changing at", 0, 1, 0.01, 1.0)
+    Slider("end", "Finish changing at", 0, 1, 0.01, 1.0),
+    Slider("active_start", "CFG active from (Limited Interval CFG; 0 = start)", 0, 0.5, 0.05, 0.0)
   )
-  def hookFields(v: Values): ujson.Obj = ujson.Obj(
-    "start_cfg" -> v.double("start_cfg", 7.0), "end_cfg" -> v.double("end_cfg", 3.0), "curve" -> v.str("curve", "linear"),
-    "start" -> v.double("start", 0.0), "end" -> v.double("end", 1.0))
+  def hookFields(v: Values): ujson.Obj =
+    val obj = ujson.Obj(
+      "start_cfg" -> v.double("start_cfg", 7.0), "end_cfg" -> v.double("end_cfg", 3.0), "curve" -> v.str("curve", "linear"),
+      "start" -> v.double("start", 0.0), "end" -> v.double("end", 1.0))
+    val activeStart = v.double("active_start", 0.0)
+    if activeStart > 0.0 then obj("active_start") = activeStart
+    obj
   def infotextKeys(o: ujson.Obj): Seq[(String, String)] =
-    Seq("CFG schedule" -> ExtKeys.packed(o, Seq("start_cfg", "end_cfg", "curve", "start", "end")))
+    Seq("CFG schedule" -> ExtKeys.packed(o, Seq("start_cfg", "end_cfg", "curve", "start", "end", "active_start")))
   override def xyzAxes: Seq[XyzAxis] = Seq(numAxis("CFG schedule start", "start_cfg"), numAxis("CFG schedule end", "end_cfg"))
 
 /** CADS (v0xie/sd-webui-cads). */

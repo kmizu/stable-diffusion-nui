@@ -16,6 +16,7 @@ object FastModePlugin:
         val parts = raw.split(",").toSeq.map(_.trim).filter(_.nonEmpty)
         if parts.isEmpty then None
         else
+          var from: Option[Double] = None
           var until: Option[Double] = None
           var interval: Option[Int] = None
           var order: Option[Int] = None
@@ -24,7 +25,10 @@ object FastModePlugin:
           var gateStep: Option[Int] = None
           var valid = true
           parts.foreach { part =>
-            if part.startsWith("CFG until ") && until.isEmpty then
+            if part.startsWith("CFG from ") && from.isEmpty then
+              from = part.stripPrefix("CFG from ").trim.toDoubleOption.filter(v => java.lang.Double.isFinite(v) && v >= 0.0 && v <= 0.4)
+              if from.isEmpty then valid = false
+            else if part.startsWith("CFG until ") && until.isEmpty then
               until = part.stripPrefix("CFG until ").trim.toDoubleOption.filter(v => java.lang.Double.isFinite(v) && v >= 0.3 && v <= 1.0)
               if until.isEmpty then valid = false
             else if part.startsWith("DeepCache interval ") && interval.isEmpty then
@@ -49,6 +53,7 @@ object FastModePlugin:
             val base = Values.defaults(new FastModePlugin().controls).map
             Some(Values(base ++ Map(
               "enabled" -> "true",
+              "guidance_from" -> from.fold("0")(Values.fmt),
               "guidance_until" -> Values.fmt(until.get),
               "interval" -> interval.get.toString,
               "order" -> order.getOrElse(0).toString,
@@ -76,6 +81,7 @@ class FastModePlugin extends Plugin:
 
   override def controls: Seq[Control] = Seq(
     Check("enabled", "Enabled"),
+    Slider("guidance_from", "CFG from (Limited Interval CFG; 0 = start)", 0.0, 0.4, 0.05, 0.10),
     Slider("guidance_until", "CFG until (fraction of the steps; 1 = all steps)", 0.3, 1, 0.05, 0.7),
     IntField("interval", "DeepCache: full step every N steps (0 = no DeepCache)", 0, 10, 3),
     IntField("order", "TaylorSeer forecast order (0 = reuse, 1 = linear, 2 = quadratic)", 0, 2, 1),
@@ -85,6 +91,7 @@ class FastModePlugin extends Plugin:
 
   override def process(p: GenerationParams, v: Values): GenerationParams =
     val until = math.max(0.0, math.min(1.0, v.double("guidance_until", 0.7)))
+    val from = math.max(0.0, math.min(until - 0.05, v.double("guidance_from", 0.10)))
     val interval = v.int("interval", 3)
     val order = math.max(0, math.min(2, v.int("order", 1)))
     val contraction = math.max(0.1, math.min(1.0, v.double("contraction", 0.7)))
@@ -106,10 +113,18 @@ class FastModePlugin extends Plugin:
       else Hooks(withTGate, CfgCachePlugin.Id, ujson.Obj("start" -> 0.25, "interval" -> cfgCacheInterval))._1
     // The engine skips the negative pass exactly when the scheduled CFG is 1, so the schedule steps from the request's CFG to 1.
     val withGuidance =
-      if until >= 1.0 || p.cfgScale <= 1.0 || withCfgCache.hooks.contains("cfg_schedule") then withCfgCache
-      else Hooks(withCfgCache, "cfg_schedule", ujson.Obj("start_cfg" -> p.cfgScale, "end_cfg" -> 1.0, "curve" -> "linear",
-        "start" -> math.max(0.0, until - 0.01), "end" -> until))._1
-    val info = s"CFG until $until, DeepCache interval $interval" +
+      if (until >= 1.0 && from <= 0.0) || p.cfgScale <= 1.0 || withCfgCache.hooks.contains("cfg_schedule") then withCfgCache
+      else
+        val schedule = if until < 1.0 then ujson.Obj(
+          "start_cfg" -> p.cfgScale, "end_cfg" -> 1.0, "curve" -> "linear",
+          "start" -> math.max(0.0, until - 0.01), "end" -> until)
+        else ujson.Obj(
+          "start_cfg" -> p.cfgScale, "end_cfg" -> p.cfgScale, "curve" -> "linear",
+          "start" -> 0.0, "end" -> 1.0)
+        if from > 0.0 then schedule("active_start") = from
+        Hooks(withCfgCache, "cfg_schedule", schedule)._1
+    val info = (if from > 0.0 then s"CFG from ${Values.fmt(from)}, " else "") +
+      s"CFG until $until, DeepCache interval $interval" +
       (if interval >= 2 && order > 0 then s", TaylorSeer order $order" else "") +
       (if interval >= 2 && order > 0 && contraction < 1.0 then s", HiCache contraction ${Values.fmt(contraction)}" else "") +
       (if cfgCacheInterval >= 2 && p.cfgScale > 1.0 then s", CFG-Cache interval $cfgCacheInterval" else "") +
