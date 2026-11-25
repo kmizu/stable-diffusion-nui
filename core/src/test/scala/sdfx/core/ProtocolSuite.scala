@@ -109,10 +109,10 @@ class ProtocolSuite extends munit.FunSuite:
   }
 
   test("EngineHello round trip and snake keys") {
-    val h = EngineHello(1, "v", torch = Some("t"), vramMb = 8, dryRun = true)
+    val h = EngineHello(1, "v", torch = Some("t"), vramMb = 8, dryRun = true, vulkanDevices = Seq("Vulkan0: GPU"))
     val js = SnakePickle.writeJs(h)
     assertEquals(js.obj.keys.toSet, Set("protocol", "engine_version", "python", "torch", "diffusers", "cuda", "device",
-      "vram_mb", "dry_run", "features"))
+      "vram_mb", "dry_run", "features", "vulkan_devices"))
     assertEquals(SnakePickle.read[EngineHello](js), h)
   }
 

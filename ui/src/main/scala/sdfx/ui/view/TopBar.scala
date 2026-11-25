@@ -41,7 +41,8 @@ final class TopBar(
   ckptBtn.setOnAction(_ => popup.show(ckptBtn))
 
   private def kindOf(name: String): Option[String] =
-    ctx.catalog.snapshot.get.checkpoints.find(_.name == name).map(_.kind).filter(_.nonEmpty)
+    val entry = ctx.catalog.snapshot.get.checkpoints.find(_.name == name)
+    TopBar.checkpointKind(entry, ctx.services.supervisor.loadedModel)
 
   def refreshCheckpoint(): Unit =
     val n = model.checkpoint.get
@@ -105,13 +106,14 @@ final class TopBar(
   W.tip(dryBadge, "Dry-run engine: placeholder images, no GPU needed")
 
   def setState(s: EngineState, loading: Option[String]): Unit =
+    refreshCheckpoint()
     chip.getStyleClass.removeIf(_.startsWith("chip-"))
     val native = EngineSelection.usesNativeBackend(ctx.services.settings)
     val (text, cls, tipText) = (s, loading) match
       case (EngineState.Crashed(msg), _) => ("● Engine crashed", "chip-crashed", msg)
       case (EngineState.Stopped, _)      => ("● Stopped", "chip-crashed", "The engine is not running")
       case (EngineState.Starting, _)     =>
-        ("● Starting…", "chip-starting", if native then "Starting scala-torch engine…" else "Starting the inference engine…")
+        ("● Starting…", "chip-starting", if EngineSelection.availableBackends.contains("vulkan") then "Starting Vulkan engine…" else if native then "Starting scala-torch engine…" else "Starting the inference engine…")
       case (_, Some(what))               => (s"● Loading $what", "chip-busy", s"Loading $what")
       case (EngineState.Busy, _)         => ("● Busy", "chip-busy", "The engine is working")
       case (EngineState.Ready(h), _) =>
@@ -197,3 +199,12 @@ final class TopBar(
     h.getStyleClass.add("top-bar")
     h.setPadding(new Insets(8, 14, 8, 14))
     h
+
+object TopBar:
+  private[ui] def checkpointKind(entry: Option[ModelEntry], loaded: Option[sdfx.core.protocol.LoadedModel]): Option[String] =
+    def known(kind: String): Boolean = kind.nonEmpty && !kind.equalsIgnoreCase("unknown")
+    entry.flatMap { model =>
+      Option(model.kind).filter(known).orElse {
+        loaded.filter(_.path == model.path).map(_.kind).filter(known)
+      }
+    }

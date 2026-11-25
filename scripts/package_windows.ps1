@@ -9,7 +9,11 @@ param(
     [string]$ScalaTorchTokenizerDirectory = '',
     [string]$ScalaTorchJdkHome = '',
     [switch]$PreferScalaTorch,
-    [switch]$NativeOnly
+    [switch]$NativeOnly,
+    [switch]$VulkanOnly,
+    [string]$VulkanArchive = '',
+    [string]$VulkanWorkerJar = '',
+    [string]$VulkanVcRedistDir = $env:VCToolsRedistDir
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -35,6 +39,14 @@ $process.WaitForExit()
 if ($process.ExitCode -ne 0 -or $versionInfo -notmatch 'version "(21|25)[.+"]') { throw 'A JDK 21 or 25 installation is required.' }
 if ($versionInfo -notmatch 'os.arch\s*=\s*amd64') { throw 'A Windows x64 JDK is required.' }
 
+if ($VulkanOnly) {
+    if ($NativeOnly -or $PreferScalaTorch -or $ScalaTorchWorkerDistribution -or $ScalaTorchJdkHome -or $ScalaTorchTokenizerDirectory) {
+        throw 'Choose one distribution profile.'
+    }
+    if ($versionInfo -notmatch 'version "25[.+"]') { throw 'Vulkan packaging requires a Windows x64 JDK 25.' }
+    if (-not $VulkanWorkerJar) { $VulkanWorkerJar = Join-Path $repo 'target/vulkan-worker.jar' }
+    if (-not (Test-Path -LiteralPath $VulkanWorkerJar -PathType Leaf)) { throw 'Build vulkanWorker/assembly first.' }
+}
 $workerDistribution = $null
 $nativeJdk = $null
 if ($ScalaTorchTokenizerDirectory -and -not $ScalaTorchWorkerDistribution) {
@@ -79,8 +91,16 @@ if ($ScalaTorchWorkerDistribution -or $ScalaTorchJdkHome -or $PreferScalaTorch -
     if ($nativeVersion -notmatch 'os.arch\s*=\s*amd64') { throw 'A Windows x64 Java 25 JDK is required for scala-torch.' }
 }
 
-if ($NativeOnly) {
+if ($NativeOnly -or $VulkanOnly) {
     Add-Type -AssemblyName System.IO.Compression.FileSystem
+    if ($VulkanOnly) {
+        $workerArchive = [IO.Compression.ZipFile]::OpenRead([IO.Path]::GetFullPath($VulkanWorkerJar))
+        try {
+            foreach ($entry in 'sdfx/vulkan/VulkanWorker.class','sdfx/vulkan/VulkanInference.class') {
+                if (-not $workerArchive.GetEntry($entry)) { throw "Vulkan worker jar is missing $entry" }
+            }
+        } finally { $workerArchive.Dispose() }
+    }
     $jarArchive = [IO.Compression.ZipFile]::OpenRead($jarPath)
     try {
         $serviceEntry = $jarArchive.GetEntry('META-INF/services/sdfx.engine.EngineBackendProvider')
@@ -88,8 +108,10 @@ if ($NativeOnly) {
         $reader = [IO.StreamReader]::new($serviceEntry.Open())
         try { $providers = @($reader.ReadToEnd().Split("`n") | ForEach-Object { $_.Trim() } | Where-Object { $_ -and -not $_.StartsWith('#') }) }
         finally { $reader.Dispose() }
-        if ($providers.Count -ne 1 -or $providers[0] -ne 'sdfx.engine.scalatorch.ScalaTorchBackendProvider') {
-            throw "Native-only jar must contain only the scala-torch provider; found: $($providers -join ', ')"
+        $expected = if ($VulkanOnly) { 'sdfx.engine.vulkan.VulkanBackendProvider' } else { 'sdfx.engine.scalatorch.ScalaTorchBackendProvider' }
+        if ($VulkanOnly -and ($jarArchive.Entries.FullName -match '^(scalatorch|sdfx/(scalatorch|engine/scalatorch))/')) { throw 'Scala-torch present in Vulkan application jar.' }
+        if ($providers.Count -ne 1 -or $providers[0] -ne $expected) {
+            throw "Native-only jar must contain only $expected; found: $($providers -join ', ')"
         }
         $pythonEntries = @($jarArchive.Entries | Where-Object {
             $_.FullName -match '^sdfx/pythonengine/' -or
@@ -127,6 +149,39 @@ $image = Join-Path $imageDest 'SDNUI'
 foreach ($required in @('SDNUI.exe', 'app/stable-diffusion-nui.jar', 'runtime/legal')) {
     if (-not (Test-Path -LiteralPath (Join-Path $image $required))) { throw "Missing packaged component: $required" }
 }
+if ($VulkanOnly) {
+    $nativeRoot = Join-Path $image 'vulkan'
+    $nativeBin = Join-Path $nativeRoot 'bin'
+    [IO.Directory]::CreateDirectory($nativeBin) | Out-Null
+    $asset = 'sd-master-f296cb0-bin-win-vulkan-x64.zip'
+    if (-not $VulkanArchive) {
+        $VulkanArchive = Join-Path $run $asset
+        Invoke-WebRequest -UseBasicParsing -Uri "https://github.com/leejet/stable-diffusion.cpp/releases/download/master-1129-f296cb0/$asset" -OutFile $VulkanArchive
+    }
+    if ((Get-FileHash -LiteralPath $VulkanArchive).Hash -ne '00f1093279b64a1a4b3a14d8cb7b6fe1920cb8eda31f2fde30e17546fbf8e78d') { throw 'Vulkan archive checksum mismatch.' }
+    $upstream = Join-Path $run 'upstream'
+    Expand-Archive -LiteralPath $VulkanArchive -DestinationPath $upstream
+    Get-ChildItem -LiteralPath $upstream -File | Where-Object { $_.Extension -in '.dll','.txt' } | Copy-Item -Destination $nativeBin
+    if (-not $VulkanVcRedistDir) {
+        $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
+        if (Test-Path -LiteralPath $vswhere) {
+            $vs = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+            if ($vs) {
+                $redist = Get-ChildItem -Directory (Join-Path $vs 'VC/Redist/MSVC') | Where-Object { $_.Name -match '^14\.[\d.]+$' } |
+                    Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1
+                if ($redist) { $VulkanVcRedistDir = $redist.FullName }
+            }
+        }
+    }
+    if (-not $VulkanVcRedistDir) { throw 'Pass the Visual C++ redistributable directory (VC/Redist/MSVC/<version>) with -VulkanVcRedistDir.' }
+    foreach ($name in 'msvcp140.dll','msvcp140_codecvt_ids.dll','vcruntime140.dll','vcruntime140_1.dll','vcomp140.dll') {
+        $component = if ($name -eq 'vcomp140.dll') { 'Microsoft.VC143.OpenMP' } else { 'Microsoft.VC143.CRT' }
+        Copy-Item -LiteralPath (Join-Path $VulkanVcRedistDir "x64/$component/$name") -Destination $nativeBin
+    }
+    Copy-Item -LiteralPath $VulkanWorkerJar -Destination (Join-Path $nativeRoot 'vulkan-worker.jar')
+    & (Join-Path $JdkHome 'bin/jlink.exe') --add-modules java.base,java.desktop,jdk.unsupported --strip-debug --no-header-files --no-man-pages --output (Join-Path $nativeRoot 'jre')
+    if ($LASTEXITCODE -ne 0) { throw 'Failed to link the Vulkan worker runtime.' }
+}
 if ($workerDistribution) {
     $nativeRoot = Join-Path $image 'scala-torch'
     [IO.Directory]::CreateDirectory($nativeRoot) | Out-Null
@@ -159,8 +214,8 @@ if ($workerDistribution) {
 $tracked = @(git -C $repo ls-files -- python/sdfx models licenses)
 if ($LASTEXITCODE -ne 0) { throw 'git ls-files failed; a Git checkout is required.' }
 $payload = @($tracked | Where-Object { $_ -match '^python/sdfx/.+\.py$|^python/sdfx/waifu2x_assets\.json$|^python/sdfx/data/model_keyword/(model|lora)-keyword\.txt$|^python/sdfx/data/clip_interrogator/[a-z]+\.txt$|^python/sdfx/data/clip_interrogator/openclip_registry_licenses\.json$|^python/sdfx/.+/LICENSE$|^models/.+/README\.txt$|^models/nudenet/best\.onnx$|^licenses/[A-Za-z0-9_.-]+\.txt$' })
-if (-not $NativeOnly -and -not ($payload -contains 'python/sdfx/__main__.py')) { throw 'Python source files missing from Git index.' }
-if ($NativeOnly) { $payload = @($payload | Where-Object { -not $_.StartsWith('python/') }) }
+if (-not ($NativeOnly -or $VulkanOnly) -and -not ($payload -contains 'python/sdfx/__main__.py')) { throw 'Python source files missing from Git index.' }
+if ($NativeOnly -or $VulkanOnly) { $payload = @($payload | Where-Object { -not $_.StartsWith('python/') }) }
 $nudenet = 'models/nudenet/best.onnx'
 if (-not ($payload -contains $nudenet)) { throw "Pinned NudeNet detector missing from Git index: $nudenet" }
 $nudenetHash = (Get-FileHash -LiteralPath (Join-Path $repo $nudenet) -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -174,15 +229,21 @@ foreach ($relative in $payload) {
     Copy-Item -LiteralPath $source -Destination $destination
 }
 $appFiles = @('LICENSE', 'THIRD_PARTY_NOTICES.md', 'DISTRIBUTION_NOTICES.md', '.mcp.json.example', 'mcp/README.md', 'docs/mcp-generation-metadata.md', 'docs/mcp-agent-verification.md', 'docs/batch-face-checkpoint-ja.md', 'docs/batch-face-audit-ja.md')
-if (-not $NativeOnly) { $appFiles += @('python/requirements.txt', 'python/requirements-torch.txt', 'python/requirements-dev.txt') }
+if (-not ($NativeOnly -or $VulkanOnly)) { $appFiles += @('python/requirements.txt', 'python/requirements-torch.txt', 'python/requirements-dev.txt') }
 foreach ($relative in $appFiles) {
     $source = Join-Path $repo $relative
     $destination = Join-Path $image $relative
     [IO.Directory]::CreateDirectory((Split-Path -Parent $destination)) | Out-Null
     Copy-Item -LiteralPath $source -Destination $destination
 }
-Copy-Item -LiteralPath (Join-Path $repo 'docs/WINDOWS_RELEASE.md') -Destination (Join-Path $image 'WINDOWS_RELEASE.md')
+if (-not $VulkanOnly) {
+    Copy-Item -LiteralPath (Join-Path $repo 'docs/WINDOWS_RELEASE.md') -Destination (Join-Path $image 'WINDOWS_RELEASE.md')
+}
 $zipName = "SDNUI-v$Version-windows-x64.zip"
+if ($VulkanOnly) {
+    $zipName = "SDNUI-v$Version-windows-vulkan-x64.zip"
+    Copy-Item -LiteralPath (Join-Path $repo 'docs/WINDOWS_VULKAN.md') -Destination (Join-Path $image 'WINDOWS_VULKAN.md')
+}
 $zip = Join-Path $run $zipName
 Compress-Archive -LiteralPath $image -DestinationPath $zip -CompressionLevel Optimal
 $hash = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()

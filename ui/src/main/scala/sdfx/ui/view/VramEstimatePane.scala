@@ -12,9 +12,8 @@ final class VramEstimatePane(ctx: UiContext, params: () => GenerationParams):
   node.getStyleClass.add("vram-estimate-bar")
   node.setMaxWidth(Double.MaxValue)
   node.setWrapText(true)
-  if ctx.services.dryRun then
-    node.setVisible(false)
-    node.setManaged(false)
+  node.setVisible(false)
+  node.setManaged(false)
   private var active = false
   private var closed = false
   private var busy = false
@@ -26,7 +25,10 @@ final class VramEstimatePane(ctx: UiContext, params: () => GenerationParams):
     epoch += 1
     if value && !ctx.services.dryRun then { timer.play(); refresh() } else timer.stop()
   private def refresh(): Unit =
-    if !closed && active && !busy && !ctx.vramEstimator.isBenchmarking && ctx.services.queue.isIdle then
+    val supported = VramEstimatePane.supported(ctx.services.dryRun, ctx.services.supervisor.hello)
+    node.setVisible(supported)
+    node.setManaged(supported)
+    if supported && !closed && active && !busy && !ctx.vramEstimator.isBenchmarking && ctx.services.queue.isIdle then
       val generation = params()
       val token = epoch
       busy = true
@@ -59,3 +61,7 @@ final class VramEstimatePane(ctx: UiContext, params: () => GenerationParams):
         if !closed && active && token == epoch then node.setText(s"VRAM estimate unavailable: ${Fx.message(error)}")
       }
   def dispose(): Unit = { closed = true; epoch += 1; timer.stop() }
+
+object VramEstimatePane:
+  private[ui] def supported(dryRun: Boolean, hello: Option[sdfx.core.protocol.EngineHello]): Boolean =
+    !dryRun && hello.exists(_.features.contains("vram_estimator"))

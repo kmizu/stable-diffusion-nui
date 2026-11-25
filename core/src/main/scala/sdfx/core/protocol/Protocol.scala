@@ -75,7 +75,8 @@ case class EngineHello(
     device: String = "cpu",
     vramMb: Int = 0,
     dryRun: Boolean = false,
-    features: Seq[String] = Nil
+    features: Seq[String] = Nil,
+    vulkanDevices: Seq[String] = Nil
 ) derives RW
 
 case class ModelEntry(name: String, path: String, kind: String, sizeMb: Double = 0) derives RW

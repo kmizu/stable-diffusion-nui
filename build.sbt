@@ -50,12 +50,30 @@ lazy val scalaTorchEngine = project.dependsOn(engine).settings(
 
 val nativeOnlyBuild = sys.env.get("SDFX_NATIVE_ONLY").exists(_.trim.equalsIgnoreCase("true"))
 
+val vulkanOnlyBuild = sys.env.get("SDFX_VULKAN_ONLY").exists(_.trim.equalsIgnoreCase("true"))
+
+lazy val vulkanEngine = project.dependsOn(engine).settings(commonSettings, name := "sdfx-vulkan-engine")
+
+// The Java 25 FFM classes live in their own process and never enter the desktop jar.
+lazy val vulkanWorker = project.dependsOn(core).settings(
+  commonSettings,
+  name := "sdfx-vulkan-worker",
+  Compile / javacOptions ++= Seq("--release", "25"),
+  Compile / mainClass := Some("sdfx.vulkan.VulkanWorker"),
+  assembly / mainClass := Some("sdfx.vulkan.VulkanWorker"),
+  assembly / assemblyOutputPath := (ThisBuild / baseDirectory).value / "target" / "vulkan-worker.jar"
+)
+
+def backendModules(pythonConfig: String): Seq[ClasspathDep[ProjectReference]] =
+  if (vulkanOnlyBuild) Seq(vulkanEngine % "runtime->compile")
+  else Seq[ClasspathDep[ProjectReference]](scalaTorchEngine % Runtime) ++
+    (if (nativeOnlyBuild) Seq.empty else Seq[ClasspathDep[ProjectReference]](pythonEngine % pythonConfig))
+
 lazy val plugins = project.dependsOn(core, engine).settings(commonSettings, name := "sdfx-plugins",
   libraryDependencies ++= Seq("com.google.zxing" % "core" % "3.5.3", "com.google.zxing" % "javase" % "3.5.3"))
 
 lazy val mcp = project
-  .dependsOn((Seq[ClasspathDep[ProjectReference]](core, engine, plugins, scalaTorchEngine % Runtime) ++
-    (if (nativeOnlyBuild) Seq.empty else Seq[ClasspathDep[ProjectReference]](pythonEngine % "runtime->compile")) )*)
+  .dependsOn((Seq[ClasspathDep[ProjectReference]](core, engine, plugins) ++ backendModules("runtime->compile"))*)
   .settings(commonSettings, name := "sdfx-mcp")
 
 /** Dev-only JVM client built on the official MCP Java SDK; replaces the Python scripts for acceptance runs. */
@@ -72,8 +90,7 @@ lazy val mcpClient = project
   )
 
 lazy val ui = project
-  .dependsOn((Seq[ClasspathDep[ProjectReference]](core, engine, plugins, mcp, scalaTorchEngine % Runtime) ++
-    (if (nativeOnlyBuild) Seq.empty else Seq[ClasspathDep[ProjectReference]](pythonEngine % Runtime)) )*)
+  .dependsOn((Seq[ClasspathDep[ProjectReference]](core, engine, plugins, mcp) ++ backendModules("runtime"))*)
   .settings(
     commonSettings,
     name := "sdfx-ui",
@@ -93,6 +110,8 @@ lazy val ui = project
   )
 
 lazy val root = (project in file("."))
-  .aggregate((Seq[ProjectReference](core, engine, scalaTorchEngine, plugins, mcp, ui) ++
-    (if (nativeOnlyBuild) Seq.empty else Seq[ProjectReference](pythonEngine)) )*)
+  .aggregate((Seq[ProjectReference](core, engine, plugins, mcp, ui) ++
+    (if (vulkanOnlyBuild) Seq[ProjectReference](vulkanEngine, vulkanWorker)
+     else if (nativeOnlyBuild) Seq[ProjectReference](scalaTorchEngine)
+     else Seq[ProjectReference](scalaTorchEngine, pythonEngine)) )*)
   .settings(name := "stable-diffusion-nui", publish / skip := true)

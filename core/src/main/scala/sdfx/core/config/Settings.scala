@@ -115,7 +115,8 @@ case class Settings(
     scalaTorchUnetOffloadWeights: Boolean = false,
     scalaTorchVaeOffloadWeights: Boolean = false,
     /** Bumped by [[Settings.migrateNativeDefaults]] once old native-engine values have been replaced. */
-    nativeDefaultsVersion: Int = 0
+    nativeDefaultsVersion: Int = 0,
+    vulkanDevice: Option[String] = None
 ) derives RW
 
 case class SettingsRecovery(reason: String, originalSha256: Option[String])
@@ -158,7 +159,7 @@ object Settings:
   /** Admission before producing a second JSON representation of the preview maps. */
   def validatePreviewConfiguration(s: Settings): Either[String, Unit] =
     try
-      require(Set("auto","python","scala-torch").contains(s.engineBackend),"unsupported engine backend setting")
+      require(Set("auto","python","scala-torch","vulkan").contains(s.engineBackend),"unsupported engine backend setting")
       require(s.scalaTorchUnetDevice.matches("auto|cpu|cuda(:[0-9]+)?"),"invalid scala-torch U-Net device")
       require(s.scalaTorchVaeDevice.matches("auto|cpu|cuda(:[0-9]+)?"),"invalid scala-torch VAE device")
       val budget = new PreviewBudget

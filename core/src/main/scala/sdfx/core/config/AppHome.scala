@@ -23,6 +23,7 @@ object AppHome:
   def detect(): AppHome =
     def valid(p: Path) =
       Files.isDirectory(p.resolve("scala-torch")) ||
+      Files.isRegularFile(p.resolve("vulkan/vulkan-worker.jar")) ||
       Files.isRegularFile(p.resolve("config").resolve("settings.json")) ||
       Files.isRegularFile(p.resolve("build.sbt")) ||
       Files.isDirectory(p.resolve("python").resolve("sdfx"))

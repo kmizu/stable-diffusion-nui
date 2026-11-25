@@ -17,7 +17,8 @@ final class PluginRegistry(
     builtins: Seq[Plugin],
     home: AppHome,
     settings: () => Settings,
-    parent: ClassLoader = classOf[PluginRegistry].getClassLoader
+    parent: ClassLoader = classOf[PluginRegistry].getClassLoader,
+    workerHello: () => Option[sdfx.core.protocol.EngineHello] = () => None
 ):
   @volatile private var external: Seq[Plugin] = Nil
   @volatile private var errors: Seq[String] = Nil
@@ -97,7 +98,20 @@ final class PluginRegistry(
 
   /** Values for a plugin: saved settings over control defaults. */
   def values(p: Plugin): Values =
-    Values(Values.defaults(p.controls).map ++ settings().pluginValues.getOrElse(p.id, Map.empty))
+    val defaults = Values.defaults(p.controls)
+    val saved = settings().pluginValues.getOrElse(p.id, Map.empty)
+    // Model Keyword is enabled by default on historical engines. In Vulkan it is an
+    // opt-in until its worker implements the hook. Explicit UI/MCP values take precedence.
+    val effective = if p.id == "model_keyword" && saved.isEmpty && !implicitModelKeyword then
+      defaults.updated("enabled", "false")
+    else defaults
+    Values(effective.map ++ saved)
+
+  private def implicitModelKeyword: Boolean = workerHello() match
+    case None => EngineSelection.availableBackends != Vector("vulkan")
+    case Some(hello) =>
+      val vulkan = hello.vulkanDevices.nonEmpty || hello.engineVersion.startsWith("vulkan-sd.cpp-")
+      !vulkan || hello.features.contains("model_keyword")
 
   /** Plugins whose required engine features are missing from the hello. */
   def unsupported(features: Seq[String]): Seq[(Plugin, Seq[String])] =

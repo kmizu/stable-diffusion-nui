@@ -65,7 +65,7 @@ trait McpTool:
       "idempotentHint" -> idempotent, "openWorldHint" -> false)
     o
 
-final case class ServerInfo(name: String = "stable-diffusion-nui", version: String = Version.app, instructions: String = McpServer.DefaultInstructions)
+final case class ServerInfo(name: String = "stable-diffusion-nui", version: String = Version.app, instructions: String = McpServer.distributionInstructions)
 
 /** Transport-agnostic MCP server (one instance per client session).
   *
@@ -258,6 +258,14 @@ object McpServer:
   val SupportedVersions: Seq[String] = Seq("2025-06-18", "2025-03-26", "2024-11-05")
   val LatestVersion: String = SupportedVersions.head
   val CancelMemoryMillis: Long = 60_000
+
+  def distributionInstructions: String =
+    if sdfx.engine.EngineSelection.availableBackends == Vector("vulkan") then
+      """Stable Diffusion NUI Vulkan edition supports txt2img on SD1.5 and SDXL checkpoints.
+        |Use list_models and set_model to select a checkpoint. get_status reports the active GPU and worker features.
+        |Use list_samplers to discover samplers. Call txt2img or txt2img_async to generate and list_recent to browse results.
+        |This edition has no img2img, external VAE, LoRA or generation-hook support.""".stripMargin
+    else DefaultInstructions
 
   val DefaultInstructions: String =
     """Stable Diffusion NUI: local image generation (SD1.5 / SDXL checkpoints, LoRA, hires fix, img2img / inpaint, X/Y/Z grids).

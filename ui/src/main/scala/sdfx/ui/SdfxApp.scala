@@ -41,7 +41,8 @@ final class SdfxApp extends Application:
     // legacy VRAM modes (medvram / lowvram / cpu) are mapped to the engine's values
     val loaded = sdfx.core.config.Settings.loadResult(home.settingsFile)
     val nativeSelected=EngineSelection.usesNativeBackend(loaded.settings)
-    val normalized = loaded.copy(settings = VramModes.normalizeSettings(loaded.settings, nativeEngine = nativeSelected))
+    val normalized = if EngineSelection.availableBackends == Vector("vulkan") then loaded
+      else loaded.copy(settings = VramModes.normalizeSettings(loaded.settings, nativeEngine = nativeSelected))
     val settings = normalized.settings
     Platform.setImplicitExit(true)
     val needsSetup = !nativeSelected && !opts.dryRun && settings.pythonExe.forall(_.trim.isEmpty) &&

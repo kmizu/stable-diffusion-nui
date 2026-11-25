@@ -14,7 +14,7 @@ import scala.jdk.CollectionConverters.*
 
 /** Settings editor. Returns the edited settings; the caller applies them. */
 final class SettingsDialog(owner: Stage, initial: Settings, initialTab: Int = 0, wdWorkerReported: Option[Boolean] = None,
-    localization: Option[sdfx.ui.i18n.LocalizationController] = None):
+    localization: Option[sdfx.ui.i18n.LocalizationController] = None, vulkanDevices: Seq[String] = Nil):
   private val kinds = Seq("Checkpoints", "VAE", "LoRA", "ControlNet", "Embeddings", "Upscalers", "Face restore", "SVD",
     "Zero123", "PhotoMaker")
   private val dirs: Map[String, ObservableList[String]] =
@@ -34,6 +34,12 @@ final class SettingsDialog(owner: Stage, initial: Settings, initialTab: Int = 0,
   private val hiresCheckpointLabels = new SimpleStringProperty(initial.hiresFixTweaks.checkpointLabels)
   private val availableBackends = EngineSelection.availableBackends
   private val backendChoices = (if availableBackends.size > 1 then Seq("auto") else Seq.empty) ++ availableBackends
+  private val vulkanDevice = new ComboBox[String](FXCollections.observableArrayList(
+    (Seq("auto") ++ vulkanDevices ++ initial.vulkanDevice).distinct*))
+  vulkanDevice.setEditable(true)
+  vulkanDevice.setValue(initial.vulkanDevice.getOrElse("auto"))
+  vulkanDevice.getEditor.setText(vulkanDevice.getValue)
+  vulkanDevice.setMaxWidth(Double.MaxValue)
   private val pythonExe = new SimpleStringProperty(initial.pythonExe.getOrElse(""))
   private val engineBackend = new SimpleStringProperty(
     if backendChoices.contains(initial.engineBackend) then initial.engineBackend else backendChoices.headOption.getOrElse("auto"))
@@ -164,40 +170,45 @@ final class SettingsDialog(owner: Stage, initial: Settings, initialTab: Int = 0,
   private val engineForm =
     val form = W.form()
     if backendChoices.nonEmpty then form.add("Inference backend", W.combo(FXCollections.observableArrayList(backendChoices*), engineBackend),
-      "Available inference modules in this application; scala-torch uses the worker paths below or corresponding SDFX_SCALATORCH_* environment variables")
-    form
-      .full(sectionNote("Native engine (scala-torch)"))
-      .add("scala-torch classpath", browseRow(scalaTorchClasspath, false, "Choose worker classpath file"), "Uses the packaged runtime when available; otherwise choose a manifest whose entries may be absolute or relative to this file")
-      .add("scala-torch model", scalaTorchModelRow(), "Diffusers model folder or SD1 safetensors checkpoint")
-      .add("scala-torch scheduler", browseRow(scalaTorchScheduler, false, "Choose scheduler JSON"), "Uses the selected model's scheduler/scheduler_config.json when empty")
-      .add("scala-torch Java", browseRow(scalaTorchJava, false, "Choose Java 25 executable (optional)"), "Uses the packaged Java 25 runtime when available, then NUI's current Java runtime")
-      .add("scala-torch cuDNN folder", browseRow(scalaTorchCudnnDir, true, "Choose the folder that holds cuDNN (cudnn64_9.dll)"),
-        "Optional, makes convolutions faster. Empty = searched in the CUDA Toolkit, the cuDNN installer's folder and Path. A PyTorch torch\\lib folder works")
-      .add("scala-torch VRAM limit (MB)", W.textField(scalaTorchVramLimitMb),
-        "Optional. The engine uses at most this much GPU memory; models that do not fit are partly kept in system memory (slower)")
-      .add("scala-torch U-Net device", W.combo(FXCollections.observableArrayList("auto", "cpu", "cuda", "cuda:0", "cuda:1"), scalaTorchUnetDevice), "U-Net compute device; cuda selects GPU 0")
-      .add("scala-torch VAE device", W.combo(FXCollections.observableArrayList("auto", "cpu", "cuda", "cuda:0", "cuda:1"), scalaTorchVaeDevice), "VAE encode/decode compute device; cuda selects GPU 0")
-      .full(W.check("Offload U-Net weights between CPU and CUDA", scalaTorchUnetOffloadWeights))
-      .full(W.check("Offload VAE weights between CPU and CUDA", scalaTorchVaeOffloadWeights))
+      "Available inference modules in this application")
+    if availableBackends.contains("vulkan") then
+      form.add("Vulkan GPU", vulkanDevice,
+        "Choose an adapter or type its name or ID (such as Vulkan0). Auto uses the worker default. Restart the engine to apply.")
+    if availableBackends.contains("scala-torch") then
+      form
+        .full(sectionNote("Native engine (scala-torch)"))
+        .add("scala-torch classpath", browseRow(scalaTorchClasspath, false, "Choose worker classpath file"), "Uses the packaged runtime when available; otherwise choose a manifest whose entries may be absolute or relative to this file")
+        .add("scala-torch model", scalaTorchModelRow(), "Diffusers model folder or SD1 safetensors checkpoint")
+        .add("scala-torch scheduler", browseRow(scalaTorchScheduler, false, "Choose scheduler JSON"), "Uses the selected model's scheduler/scheduler_config.json when empty")
+        .add("scala-torch Java", browseRow(scalaTorchJava, false, "Choose Java 25 executable (optional)"), "Uses the packaged Java 25 runtime when available, then NUI's current Java runtime")
+        .add("scala-torch cuDNN folder", browseRow(scalaTorchCudnnDir, true, "Choose the folder that holds cuDNN (cudnn64_9.dll)"),
+          "Optional, makes convolutions faster. Empty = searched in the CUDA Toolkit, the cuDNN installer's folder and Path. A PyTorch torch\\lib folder works")
+        .add("scala-torch VRAM limit (MB)", W.textField(scalaTorchVramLimitMb),
+          "Optional. The engine uses at most this much GPU memory; models that do not fit are partly kept in system memory (slower)")
+        .add("scala-torch U-Net device", W.combo(FXCollections.observableArrayList("auto", "cpu", "cuda", "cuda:0", "cuda:1"), scalaTorchUnetDevice), "U-Net compute device; cuda selects GPU 0")
+        .add("scala-torch VAE device", W.combo(FXCollections.observableArrayList("auto", "cpu", "cuda", "cuda:0", "cuda:1"), scalaTorchVaeDevice), "VAE encode/decode compute device; cuda selects GPU 0")
+        .full(W.check("Offload U-Net weights between CPU and CUDA", scalaTorchUnetOffloadWeights))
+        .full(W.check("Offload VAE weights between CPU and CUDA", scalaTorchVaeOffloadWeights))
     if availableBackends.contains("python") then
       form
         .full(sectionNote("Python fallback"))
         .add("Python", browseRow(pythonExe, false, "Choose python executable"), "Python interpreter for the engine (empty = app venv, then system Python)")
-    form
-      .full(sectionNote("Precision & memory"))
-      .add("Precision", W.combo(FXCollections.observableArrayList("fp16", "bf16", "fp32"), dtype), "Model weight precision (fp16 for most GPUs)")
-      .add("VRAM mode", W.indexCombo(VramModes.Modes.map(_._2), vramIndex), "GPU: everything stays on the GPU · Model offload: whole models move to the GPU when used · Sequential offload: layer by layer, slowest but lowest VRAM · Auto: choose from the free VRAM at model load")
-      .full(W.check("VAE tiling (decode large images in tiles to save VRAM)", vaeTiling))
-      .full(W.check("VAE slicing (decode a batch one image at a time to save VRAM)", vaeSlicing))
-      .full(W.check("Automatic VAE slicing / tiling when the decode would not fit the free VRAM", vaeAuto))
-      .full(W.check("fp16 VAE decode for SDXL (saves ~2.5 GB at 832x1216; falls back to fp32 on bad output)", vaeFp16))
-      .full(W.check("fp8 U-Net weights (half the U-Net VRAM, upcast per layer; GPU VRAM mode only)", fp8Storage))
-      .full(W.check("Offline mode (never download from Hugging Face)", hfOffline))
+    if !availableBackends.contains("vulkan") then
+      form
+        .full(sectionNote("Precision & memory"))
+        .add("Precision", W.combo(FXCollections.observableArrayList("fp16", "bf16", "fp32"), dtype), "Model weight precision (fp16 for most GPUs)")
+        .add("VRAM mode", W.indexCombo(VramModes.Modes.map(_._2), vramIndex), "GPU: everything stays on the GPU · Model offload: whole models move to the GPU when used · Sequential offload: layer by layer, slowest but lowest VRAM · Auto: choose from the free VRAM at model load")
+        .full(W.check("VAE tiling (decode large images in tiles to save VRAM)", vaeTiling))
+        .full(W.check("VAE slicing (decode a batch one image at a time to save VRAM)", vaeSlicing))
+        .full(W.check("Automatic VAE slicing / tiling when the decode would not fit the free VRAM", vaeAuto))
+        .full(W.check("fp16 VAE decode for SDXL (saves ~2.5 GB at 832x1216; falls back to fp32 on bad output)", vaeFp16))
+        .full(W.check("fp8 U-Net weights (half the U-Net VRAM, upcast per layer; GPU VRAM mode only)", fp8Storage))
+        .full(W.check("Offline mode (never download from Hugging Face)", hfOffline))
     if availableBackends.contains("python") then
       form.full(W.check("Allow custom code (the Custom code script runs Python in the engine; like A1111 --allow-code)", allowCode))
     val backendHint = if availableBackends.contains("python") then "Python, precision and VRAM changes apply after an engine restart."
       else "Precision and VRAM changes apply after an engine restart."
-    form.full(W.label(backendHint, "hint"))
+    if !availableBackends.contains("vulkan") then form.full(W.label(backendHint, "hint"))
     form
 
   private val engineTab = new Tab("Engine", page(engineForm))
@@ -272,16 +283,8 @@ final class SettingsDialog(owner: Stage, initial: Settings, initialTab: Int = 0,
     })
     val r = d.showAndWait()
     if r.isPresent && r.get == ButtonType.OK then
-      Some(
+      val engine = SettingsDialog.engineSettings(initial, availableBackends, vulkanDevice.getEditor.getText) {
         initial.copy(
-          modelDirs = currentDirs,
-          localization = languagePane.current,
-          outputDir = Option(outputDir.get).map(_.trim).filter(_.nonEmpty).getOrElse("outputs"),
-          hiresFixTweaks = initial.hiresFixTweaks.copy(outputDir = Option(hiresOutputDir.get).fold("")(_.trim),
-            showCfg = hiresShowCfg.get, showBatchSeed = hiresShowBatchSeed.get,
-            showPromptModes = hiresShowPromptModes.get, showRemoveNetworks = hiresShowRemove.get,
-            showStyles = hiresShowStyles.get, promptModeRadio = hiresRadio.get, checkpointLabels = hiresCheckpointLabels.get,
-            saveTemplate = hiresSaveTemplate.get, restoreTemplate = hiresRestoreTemplate.get),
           pythonExe = if availableBackends.contains("python") then Option(pythonExe.get).map(_.trim).filter(_.nonEmpty) else initial.pythonExe,
           engineBackend = engineBackend.get,
           scalaTorchClasspath = Option(scalaTorchClasspath.get).map(_.trim).filter(_.nonEmpty),
@@ -301,9 +304,21 @@ final class SettingsDialog(owner: Stage, initial: Settings, initialTab: Int = 0,
           fp8Storage = fp8Storage.get,
           vaeAuto = vaeAuto.get,
           vaeFp16 = vaeFp16.get,
+          hfOffline = hfOffline.get
+        )
+      }
+      Some(
+        engine.copy(
+          modelDirs = currentDirs,
+          localization = languagePane.current,
+          outputDir = Option(outputDir.get).map(_.trim).filter(_.nonEmpty).getOrElse("outputs"),
+          hiresFixTweaks = initial.hiresFixTweaks.copy(outputDir = Option(hiresOutputDir.get).fold("")(_.trim),
+            showCfg = hiresShowCfg.get, showBatchSeed = hiresShowBatchSeed.get,
+            showPromptModes = hiresShowPromptModes.get, showRemoveNetworks = hiresShowRemove.get,
+            showStyles = hiresShowStyles.get, promptModeRadio = hiresRadio.get, checkpointLabels = hiresCheckpointLabels.get,
+            saveTemplate = hiresSaveTemplate.get, restoreTemplate = hiresRestoreTemplate.get),
           previewEvery = previewEvery.get,
           previewMethod = previewMethod.get,
-          hfOffline = hfOffline.get,
           mcpHttpEnabled = mcpEnabled.get,
           mcpHttpPort = mcpPort.get,
           mcpToken = Option(mcpToken.get).map(_.trim).filter(_.nonEmpty),
@@ -317,3 +332,10 @@ final class SettingsDialog(owner: Stage, initial: Settings, initialTab: Int = 0,
     else
       localization.foreach(_.setExtraDirs(initial.localization.extraDirs)) // folders added in the Language tab were not saved
       None
+
+object SettingsDialog:
+  /** Only the adapter setting is editable on the Vulkan engine tab. */
+  private[ui] def engineSettings(initial: Settings, backends: Seq[String], device: String)(conventional: => Settings): Settings =
+    if backends == Seq("vulkan") then
+      initial.copy(vulkanDevice = Option(device).map(_.trim).filter(v => v.nonEmpty && !v.equalsIgnoreCase("auto")))
+    else conventional

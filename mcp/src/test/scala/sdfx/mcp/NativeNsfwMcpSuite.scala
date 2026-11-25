@@ -10,6 +10,7 @@ import java.nio.file.{Files, Path}
 
 class NativeNsfwMcpSuite extends munit.FunSuite:
   test("Python-free scala-torch dry-run worker supports nsfw_checker generation hook and Extras Pixelate") {
+    assume(sdfx.engine.EngineSelection.availableBackends.contains("scala-torch"), "scala-torch provider required")
     val tmp = Files.createTempDirectory("nudenet-mcp-native-")
     val appHome = AppHome(tmp)
     val nudenetDir = tmp.resolve("models/nudenet")

@@ -26,3 +26,9 @@ The OpenJFX source contains additional module legal texts for graphics, included
 | Scala 2 | [`JVM__scala2_NOTICE.txt`](licenses/JVM__scala2_NOTICE.txt) | [original](https://raw.githubusercontent.com/scala/scala/3f6bdaeafde17d790023cc3f299b81eaaf876ca3/NOTICE) | `50ce10d50898ba07e632c8913b34098521416d6eed480d44edca93bd92344a45` |
 | uPickle | [`JVM__upickle_LICENSE.txt`](licenses/JVM__upickle_LICENSE.txt) | [original](https://raw.githubusercontent.com/com-lihaoyi/upickle/77d6f785fdf3d0054d5db06ab2714c67f02d77c3/LICENSE) | `fc06ee462a6d140906b364eb86b1f0c86fc9134827f7605df49b84190d1e2120` |
 | geny | [`JVM__geny_LICENSE.txt`](licenses/JVM__geny_LICENSE.txt) | [original](https://raw.githubusercontent.com/com-lihaoyi/geny/9b290357503e5601a650bc469a072bb9a2266efb/LICENSE) | `f8a443667d027fd656ab15ad601b7a12489f3f8bbe0ee528b558a0b7fd1863db` |
+
+## Windows Vulkan edition
+
+The Vulkan edition bundles the DLLs from the [stable-diffusion.cpp Windows Vulkan x64 release at f296cb0](https://github.com/leejet/stable-diffusion.cpp/releases/tag/master-1129-f296cb0). The upstream archive supplies the license texts for stable-diffusion.cpp, ggml, libwebp and libwebm. They are distributed alongside the DLLs in `vulkan/bin`. The archive digest and reproduction commands appear in `WINDOWS_VULKAN.md` in the package.
+
+The Vulkan package also includes the Microsoft Visual C++ 2022 x64 CRT and OpenMP DLLs copied from the Windows build machine's Visual Studio redistributable directory. Microsoft supplies these files under the terms for its [Visual C++ runtime distributable code](https://learn.microsoft.com/en-us/visualstudio/releases/2022/redistribution#visual-c-runtime-files).

@@ -27,7 +27,9 @@ final class AppServices(
     initialRecovery: Option[SettingsRecovery] = None,
     settingsWriter: (Path, Settings) => Unit = Settings.save
 ):
-  private val startSettings: Settings = Settings.migrateNativeDefaults(initialSettings)
+  private val startSettings: Settings =
+    if EngineSelection.availableBackends == Vector("vulkan") then initialSettings
+    else Settings.migrateNativeDefaults(initialSettings)
   private val nativeLaunchSelected=launchOverride.isEmpty && EngineBackend.usesNativeBackend(startSettings,sys.env)
   @volatile private var _settings = startSettings
   if persistSettings && startSettings != initialSettings && initialRecovery.isEmpty then
@@ -115,7 +117,7 @@ final class AppServices(
     val dispatch = queue.captureRuntimeInterrupt(backend)
     Future(dispatch()).flatten
 
-  val registry: PluginRegistry = new PluginRegistry(builtins, home, () => _settings)
+  val registry: PluginRegistry = new PluginRegistry(builtins, home, () => _settings, workerHello = () => supervisor.hello)
   def gallery: GalleryIndex = galleryIndex
   private def newGalleryIndex(): GalleryIndex = new GalleryIndex(home.outputs(_settings), () =>
     Option(_settings.hiresFixTweaks.outputDir).filter(_.trim.nonEmpty).toSeq.map(p => home.resolve(p.trim)))
@@ -161,8 +163,7 @@ final class AppServices(
       .orElse(Some(home.resolve(name)).filter(f => Files.isRegularFile(f) && generator.withinDirs(f, _settings.modelDirs.checkpoints)).map(_.toString))
       .getOrElse(throw EngineError(Protocol.ErrorCodes.InvalidParams, s"checkpoint not found: $name"))
     val s = _settings
-    val (dtype, vramMode) = EngineBackend.loadModes(s)
-    val m = awaitOrRestart(client.loadModel(LoadModelRequest(path, dtype, vramMode, None, s.vaeTiling, s.vaeSlicing, s.fp8Storage, s.vaeAuto, s.vaeFp16)), timeouts.load, "load_model")
+    val m = awaitOrRestart(client.loadModel(EngineBackend.loadRequest(path, s)), timeouts.load, "load_model")
     catalog.rememberHash(m)
     if remember then updateSettings(_.copy(lastModel = Some(catalog.findCheckpoint(name).map(_.name).getOrElse(name))))
     m

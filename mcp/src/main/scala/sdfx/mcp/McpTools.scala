@@ -1156,6 +1156,7 @@ final class McpTools(
       sup.hello.foreach { h =>
         v("engine") = ujson.Obj("version" -> h.engineVersion, "device" -> h.device, "cuda" -> h.cuda, "vram_mb" -> h.vramMb, "python" -> h.python,
           "torch" -> h.torch.map(ujson.Str(_)).getOrElse(ujson.Null), "dry_run" -> h.dryRun, "features" -> ujson.Arr.from(h.features))
+        if h.vulkanDevices.nonEmpty then v("engine")("vulkan_devices") = ujson.Arr.from(h.vulkanDevices)
       }
       ToolResult.json(v)
     }),

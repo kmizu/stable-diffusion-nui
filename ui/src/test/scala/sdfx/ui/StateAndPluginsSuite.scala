@@ -60,6 +60,68 @@ class StateAndPluginsSuite extends munit.FunSuite:
     assert(replay.hooks("hires_fix_tweaks")("prompts_resolved").bool)
   }
 
+  test("automatic VRAM queries require the advertised live estimator feature") {
+    import sdfx.core.protocol.EngineHello
+    import sdfx.ui.view.VramEstimatePane
+    val hello = EngineHello(1, "worker")
+    assert(!VramEstimatePane.supported(false, None))
+    assert(!VramEstimatePane.supported(false, Some(hello)))
+    val capable = Some(hello.copy(features = Seq("vram_estimator")))
+    assert(VramEstimatePane.supported(false, capable))
+    assert(!VramEstimatePane.supported(true, capable))
+  }
+
+  test("unknown checkpoint catalog kind uses the loaded model only for the same path") {
+    import sdfx.core.protocol.{LoadedModel, ModelEntry}
+    import sdfx.ui.view.TopBar
+    val model = ModelEntry("checkpoint", "a.safetensors", "unknown")
+    val loaded = LoadedModel(model.name, model.path, "sd15", "hash", 0)
+    assertEquals(TopBar.checkpointKind(Some(model), Some(loaded)), Some("sd15"))
+    assertEquals(TopBar.checkpointKind(Some(model), Some(loaded.copy(path = "b.safetensors"))), None)
+    assertEquals(TopBar.checkpointKind(Some(model.copy(kind = "sdxl")), None), Some("sdxl"))
+  }
+
+  test("the Vulkan desktop and MCP share an opt-in Model Keyword default, preserving explicit values") {
+    assume(sdfx.engine.EngineSelection.availableBackends == Vector("vulkan"))
+    val plugin = new sdfx.plugins.ModelKeywordPlugin
+    val home = sdfx.core.config.AppHome(java.nio.file.Files.createTempDirectory("vulkan-plugin"))
+    var preferences = sdfx.core.config.Settings()
+    var hello = Option.empty[sdfx.core.protocol.EngineHello]
+    val registry = new sdfx.engine.PluginRegistry(Seq(plugin), home, () => preferences, workerHello = () => hello)
+    try
+      val desktop = new PluginsVM(Mode.Txt2Img, Nil, Seq(plugin), registry.values)
+      assertEquals(desktop.alwaysOnJob.size, 0)
+      val defaults = registry.values(plugin)
+      assert(!plugin.isActive(defaults))
+      assert(plugin.isActive(defaults.updated("enabled", "true")))
+      desktop.form(plugin.id).get.prop("enabled").get.set("true")
+      assertEquals(desktop.alwaysOnJob.map(_._1.id), Seq("model_keyword"))
+      hello = Some(sdfx.core.protocol.EngineHello(1, "fake"))
+      assert(plugin.isActive(registry.values(plugin)))
+      hello = Some(sdfx.core.protocol.EngineHello(1, "vulkan-sd.cpp-test"))
+      assert(!plugin.isActive(registry.values(plugin)))
+      hello = hello.map(_.copy(features = Seq("model_keyword")))
+      assert(plugin.isActive(registry.values(plugin)))
+      hello = Some(sdfx.core.protocol.EngineHello(1, "future-worker", vulkanDevices = Seq("Vulkan0: Adapter A")))
+      assert(!plugin.isActive(registry.values(plugin)))
+      preferences = preferences.copy(pluginValues = Map(plugin.id -> Map("enabled" -> "true")))
+      assert(plugin.isActive(registry.values(plugin)))
+    finally
+      registry.close()
+      java.nio.file.Files.delete(home.root)
+  }
+
+  test("Vulkan GPU selection preserves hidden engine settings including legacy VRAM modes") {
+    val original = sdfx.core.config.Settings(engineBackend = "scala-torch", vramMode = "cpu",
+      scalaTorchModel = Some(" model path "), scalaTorchVramLimitMb = Some(0))
+    val saved = sdfx.ui.view.SettingsDialog.engineSettings(original, Seq("vulkan"), " Vulkan1 ") {
+      fail("Hidden conventional engine fields were evaluated")
+    }
+    assertEquals(SettingsMerge(original, saved), original.copy(vulkanDevice = Some("Vulkan1")))
+    val automatic = sdfx.ui.view.SettingsDialog.engineSettings(saved, Seq("vulkan"), "auto")(saved)
+    assertEquals(automatic, original)
+  }
+
   test("settings dialog merge retains Hires preferences and preserves current model") {
     val current = sdfx.core.config.Settings(lastModel = Some("current"))
     val edited = sdfx.core.config.Settings(hiresFixTweaks = sdfx.core.config.HiresFixTweaksPreferences(outputDir = "hires",

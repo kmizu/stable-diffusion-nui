@@ -23,11 +23,17 @@ private[engine] object EngineBackend:
   private def provider(name: String)=backend(providers.find(_.name==name).getOrElse(
     throw new IllegalArgumentException(s"engine backend module is not installed: $name")))
 
+  // Data homes may be shared with a conventional installation. Keep its saved backend
+  // preference intact while running the worker supplied by the Vulkan distribution.
+  def savedBackend(settings: Settings): String =
+    if availableProviders == Vector("vulkan") then "auto" else settings.engineBackend
+
   /** Backend modules are discovered through the generic provider SPI. */
   def select(home: AppHome,settings: Settings,dryRun: Boolean,environment: Map[String,String]=sys.env): EngineBackend =
     environment.get("SDFX_ENGINE_BACKEND").orElse(sys.props.get("sdfx.engine.backend"))
-      .orElse(Option.when(settings.engineBackend.trim.nonEmpty && !settings.engineBackend.trim.equalsIgnoreCase("auto"))(settings.engineBackend))
+      .orElse(Option.when(savedBackend(settings).trim.nonEmpty && !savedBackend(settings).trim.equalsIgnoreCase("auto"))(savedBackend(settings)))
       .map(_.trim.toLowerCase(java.util.Locale.ROOT)) match
+      case Some("vulkan") => provider("vulkan")
       case Some("python") => provider("python")
       case Some("scala-torch") => provider("scala-torch")
       case Some(other) => throw new IllegalArgumentException(s"unsupported engine backend: $other")
@@ -36,16 +42,16 @@ private[engine] object EngineBackend:
   /** Whether startup should skip Python setup for the selected non-Python backend. */
   def usesNativeBackend(settings: Settings,environment: Map[String,String]): Boolean =
     environment.get("SDFX_ENGINE_BACKEND") match
-      case Some(value) => value.trim.equalsIgnoreCase("scala-torch")
-      case None => settings.engineBackend match
-        case "scala-torch" => true
+      case Some(value) => Set("scala-torch", "vulkan").contains(value.trim.toLowerCase(java.util.Locale.ROOT))
+      case None => savedBackend(settings) match
+        case "scala-torch" | "vulkan" => true
         case "python" => false
         case _ => sys.props.get("sdfx.engine.backend") match
-          case Some(value) => value.trim.equalsIgnoreCase("scala-torch")
+          case Some(value) => Set("scala-torch", "vulkan").contains(value.trim.toLowerCase(java.util.Locale.ROOT))
           // A classpath with no backend module installed (for example the engine module's own tests) has no
           // native backend to start; only ask for the default when at least one backend is installed.
           case None => providers.exists(_.usesNativeBackend(settings,environment)) ||
-            (providers.nonEmpty && defaultProvider=="scala-torch")
+            (providers.nonEmpty && defaultProvider!="python")
 
   /** dtype and VRAM mode to send with `load_model`. The native worker executes in fp16 (CUDA half precision) or fp32; it has no bf16, so
     * bf16 is sent as fp16 (the closest half precision). U-Net / VAE placement is configured separately there, `vram_mode` is not used. */
@@ -55,8 +61,15 @@ private[engine] object EngineBackend:
       case "fp32" | "float32" => "fp32"
       case _ => "fp16", settings.vramMode)
 
+  def loadRequest(path: String, settings: Settings): sdfx.core.protocol.LoadModelRequest =
+    import sdfx.core.protocol.LoadModelRequest
+    val (dtype, vramMode) = loadModes(settings)
+    if availableProviders == Vector("vulkan") then LoadModelRequest(path, dtype)
+    else LoadModelRequest(path, dtype, vramMode, None, settings.vaeTiling, settings.vaeSlicing,
+      settings.fp8Storage, settings.vaeAuto, settings.vaeFp16)
+
   def launch(home: AppHome,settings: Settings,dryRun: Boolean,environment: Map[String,String]=sys.env): EngineLaunch =
-    val configured0=if environment.contains("SDFX_ENGINE_BACKEND") || settings.engineBackend=="auto" then environment
+    val configured0=if environment.contains("SDFX_ENGINE_BACKEND") || savedBackend(settings)=="auto" then environment
       else environment.updated("SDFX_ENGINE_BACKEND",settings.engineBackend)
     select(home,settings,dryRun,configured0).launch(home,settings,dryRun,configured0)
 
@@ -73,7 +86,7 @@ object EngineSetup:
   private def selected(settings: Settings, environment: Map[String,String]): EngineBackendProvider =
     val name = environment.get("SDFX_ENGINE_BACKEND").orElse(sys.props.get("sdfx.engine.backend"))
       .map(_.trim.toLowerCase(java.util.Locale.ROOT)).filter(_.nonEmpty)
-      .orElse(Option.when(settings.engineBackend != "auto")(settings.engineBackend))
+      .orElse(Option.when(EngineBackend.savedBackend(settings) != "auto")(EngineBackend.savedBackend(settings)))
       .getOrElse(EngineBackend.defaultProvider)
     java.util.ServiceLoader.load(classOf[EngineBackendProvider]).iterator().asScala
       .find(_.name == name).getOrElse(throw new IllegalArgumentException(s"engine backend module is not installed: $name"))

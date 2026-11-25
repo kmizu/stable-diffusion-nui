@@ -1115,7 +1115,8 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
   def openSettings(tab: Int = 0): Unit =
     val before = services.settings
     val wdReported = services.supervisor.hello.map(_.features.contains("batch_interrogate_wd_v3_partial"))
-    new SettingsDialog(stage, before, tab, wdReported, Some(localization)).showAndWait().foreach { edited =>
+    new SettingsDialog(stage, before, tab, wdReported, Some(localization),
+      services.supervisor.hello.toSeq.flatMap(_.vulkanDevices)).showAndWait().foreach { edited =>
       services.updateSettingsChecked(cur => SettingsMerge(cur, edited)) match
         case Left(reason) => ctx.error(reason)
         case Right(s) =>
@@ -1128,7 +1129,7 @@ final class MainWindow(val stage: Stage, val services: AppServices, initial: UiS
             services.resetGallery()
             reloadGallery()
             imageBrowser.build()
-          val engineChanged = s.engineBackend != before.engineBackend || s.scalaTorchClasspath != before.scalaTorchClasspath ||
+          val engineChanged = s.vulkanDevice != before.vulkanDevice || s.engineBackend != before.engineBackend || s.scalaTorchClasspath != before.scalaTorchClasspath ||
             s.scalaTorchModel != before.scalaTorchModel || s.scalaTorchScheduler != before.scalaTorchScheduler ||
             s.scalaTorchJava != before.scalaTorchJava || s.scalaTorchUnetDevice != before.scalaTorchUnetDevice ||
             s.scalaTorchCudnnDir != before.scalaTorchCudnnDir || s.scalaTorchVramLimitMb != before.scalaTorchVramLimitMb ||

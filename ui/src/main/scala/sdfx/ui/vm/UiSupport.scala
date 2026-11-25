@@ -138,6 +138,7 @@ object SettingsMerge:
       localization = edited.localization,
       pythonExe = edited.pythonExe,
       engineBackend = edited.engineBackend,
+      vulkanDevice = edited.vulkanDevice,
       scalaTorchClasspath = edited.scalaTorchClasspath,
       scalaTorchModel = edited.scalaTorchModel,
       scalaTorchScheduler = edited.scalaTorchScheduler,
